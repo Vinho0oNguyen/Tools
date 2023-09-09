@@ -11,7 +11,7 @@ vault operator init -n <number_of_unseal_key> -t <number_key_correct_to_unseal> 
 ```
 #### Manual join to cluster
 ```
-- vault operator raft join
+- vault operator raft join <http://ip:port>
 - vault operator raft list-peers
 ```
 #### Snapshot Vault Raft
