@@ -49,6 +49,29 @@ def push_data(secret, key, content):
     if response.status_code >= 400:
         print("Failed to post data to Vault. Error:", response.text)
 ```
+#### Walk to create a list of secret into Vault
+```
+def walk():
+    completed_files = 0
+
+    secret_in_vault = get_secret(path)
+    for i in secret_in_vault:
+        create_secret_engine(i)
+        full_path = path + "\\" + i
+        file_names = os.listdir(full_path)
+        for key in  file_names:
+            if ".snap" in key:
+                continue
+            content = get_data(full_path + "\\" + key)
+            try:
+                content = json.dumps(eval(content))
+                result = "{\"data\":" + " " + content + "}"
+                push_data(i, key, result)
+            except Exception as e:
+                print(f'Error: {str(e)}')
+            completed_files += 1
+            pbar.update(min(total_file, completed_files))
+```
 ## 3. Install Vault into K8S with Helm (HA, HA-TLS, STANDALONE, DEV)
 ```
 helm upgrade --install vault hashicorp/vault -f values.yaml -n vault --create-namespace
