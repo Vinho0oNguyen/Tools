@@ -1,0 +1,40 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: cms-consumer-prod
+  labels:
+    project: cms
+  annotations:
+    argocd-image-updater.argoproj.io/git-branch: ott-prod
+    argocd-image-updater.argoproj.io/image-list: cms=docker-registry.fbox.fpt.vn/cms/cms-consumer
+    argocd-image-updater.argoproj.io/cms.force-update: "true"
+    argocd-image-updater.argoproj.io/cms.allow-tags: regexp:^master-.*$
+    argocd-image-updater.argoproj.io/cms.pull-secret: pullsecret:argo-cd/docker-registry.fbox.fpt.vn
+    argocd-image-updater.argoproj.io/cms.update-strategy: latest
+    argocd-image-updater.argoproj.io/write-back-method: git:secret:argo-cd/git-creds
+    argocd-image-updater.argoproj.io/cms.helm.image-name: deployment.repository
+    argocd-image-updater.argoproj.io/cms.helm.image-tag: deployment.tag
+    notifications.argoproj.io/subscribe.out-of-sync.telegram: "-855824262"
+    notifications.argoproj.io/subscribe.on-sync-succeeded.telegram: "-855824262"
+spec:
+  project: cms
+  destination:
+    namespace: cms
+    server: https://kubernetes.default.svc
+  source:
+    repoURL: https://git.fpt.net/fpl/he-thong/devops/cicd-template.git
+    targetRevision: ott-prod
+    path: manifest
+    helm:
+      valueFiles:
+      - values/cms/cms-consumer/deployment.yaml
+      - values/cms/cms-consumer/healthcheck.yaml
+      - values/cms/cms-consumer/ingress.yaml
+      - values/cms/cms-consumer/cronjob.yaml
+      - values/cms/cms-consumer/secret.yaml
+      - values/cms/cms-consumer/volumes.yaml
+  syncPolicy:
+    # automated: {}
+    syncOptions:
+    - PruneLast=true
+    - CreateNamespace=true

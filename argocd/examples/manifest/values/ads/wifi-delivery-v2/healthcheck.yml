@@ -1,0 +1,43 @@
+healthcheck:
+  livenessProbe:
+    httpGet:
+      enabled: true
+      path: /delivery-wifi/v2?&placement_id=1000&pid=1000&uuid=a8:9c:ed:26:e1:eb&uid=a8:9c:ed:26:e1:eb&mac_address=0c:7c:28:08:c0:a0&apid=0c:7c:28:08:c0:a0&ad_type=wifi-banner
+      port: 8080
+    tcpSocket:
+      enabled: false
+      port: 80
+    execCMD:
+      enabled: false
+      command:
+      - cat
+      - /etc/hosts
+    failureThreshold: 3
+    initialDelaySeconds: 10
+    periodSeconds: 15
+    successThreshold: 1
+    timeoutSeconds: 1
+
+  readinessProbe:
+    httpGet:
+      enabled: true
+      path: /delivery-wifi/v2?&placement_id=1000&pid=1000&uuid=a8:9c:ed:26:e1:eb&uid=a8:9c:ed:26:e1:eb&mac_address=0c:7c:28:08:c0:a0&apid=0c:7c:28:08:c0:a0&ad_type=wifi-banner
+      port: 8080
+    tcpSocket:
+      enabled: false
+      port: 80
+    execCMD:
+      enabled: false
+      command:
+      - cat
+      - /etc/hosts
+    failureThreshold: 3
+    initialDelaySeconds: 10
+    periodSeconds: 15
+    successThreshold: 1
+    timeoutSeconds: 1
+
+  lifecycle:
+    preStop:
+      exec:
+        command: ["sh","-c","sleep 10"]

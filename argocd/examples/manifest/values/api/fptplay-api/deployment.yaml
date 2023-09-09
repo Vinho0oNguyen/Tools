@@ -1,0 +1,149 @@
+global:
+  appName: fptplay-api-prod
+  serviceGroup: api
+  labels: []
+  annotations: []
+  hostAliases:
+  - ip: "183.80.82.233"
+    hostnames:
+    - "paygw.fptplay.net"
+    - "api-payment.fptplay.net"
+    - "payment.fptplay.net"
+  - ip: "42.117.9.173"
+    hostnames:
+    - "iapi02.fptplay.net"
+    - "iapi.fptplay.net.vn"
+  - ip: "183.80.199.238"
+    hostnames:
+    - "search.fptplay.net"
+    - "recommendation.fptplay.net"
+    - "inhouse.fptplay.net"
+    - "api-sport.fptplay.net"
+    - "huawei-promotion.fptplay.net"
+  - ip: "118.69.252.29"
+    hostnames:
+    - "search-ott.fptplay.net"
+  - ip: "118.69.252.2"
+    hostnames:
+    - "middleware.fptplay.net"
+    - "api-watching.fptplay.net"
+    - "uat2-middleware.fbox.fpt.vn"
+  env: []
+
+deployment:
+  enabled: true
+  repository: docker-registry.fbox.fpt.vn/api/api-main
+  tag: master-build-129492
+  replicaCount: 7
+  revisionHistoryLimit: 3
+  pullPolicy: IfNotPresent
+  pullSecret: docker-registry.fbox.fpt.vn
+  serviceAccount: default
+  restartPolicy: Always
+
+service:
+  enabled: true
+  type: ClusterIP
+  multiPort: false
+  ports:
+  - port: 8080
+    targetPort: 8080
+    nodePort: []
+    hostPort: []
+    protocol: TCP
+
+initContainer:
+- name: sysctl-init
+  image: docker-registry.fbox.fpt.vn/tools/busybox
+  command:
+  - /bin/sh
+  - -c
+  - |
+    sysctl -w net.core.somaxconn=60000
+  securityContext:
+    privileged: true
+
+strategy:
+  type: RollingUpdate
+  maxUnavailable: 0
+  maxSurge: 50%
+
+resources:
+  requests:
+    cpu: 1000m
+    memory: 1024Mi
+  limits: 
+    cpu: 4000m
+    memory: 4000Mi
+
+enableProxy:
+  enabled: true
+  httpProxy: "http://proxy.hcm.fpt.vn:80"
+  httpsProxy: "http://proxy.hcm.fpt.vn:80"
+  noProxy: "localhost,127.0.0.1,0.0.0.0,10.0.0.0/8,cattle-system.svc,git.fpt.net, .svc, .svc.cluster.local,.fptplay.net"
+
+autoscaling:
+  enabled: true
+  minReplicas: 7
+  maxReplicas: 15
+  targetCPU: 100
+  targetMemory: 80
+  
+  behavior:
+    enabled: true
+    scaleDown:
+      enabled: false
+      pods:
+        periodSeconds: 20
+        value: 1
+      percent:
+        periodSeconds: 20
+        value: 10
+      selectPolicy: Max
+      stabilizationWindowSeconds: 10
+
+    scaleUp:
+      enabled: true
+      pods:
+        periodSeconds: 20
+        value: 2
+      percent: 
+        periodSeconds: 20
+        value: 25
+      selectPolicy: Max
+      stabilizationWindowSeconds: 10
+
+affinity:
+  enabled: false
+  podAntiAffinity:
+    enabled: true
+    soft:
+      enabled: false 
+    weight: 100
+    key: app
+    operator: In
+    values:
+    - cache-manager
+    topologyKey: "kubernetes.io/hostname"
+
+  podAffinity:
+    enabled: false
+    soft:
+      enabled: false 
+    weight:
+    key: 
+    operator: 
+    values: []
+    topologyKey: []
+
+  nodeAffinity:
+    enabled: false
+    soft:
+      enabled: false
+    values:
+    - weight: 50
+      preference:
+        matchExpressions:
+        - key:
+          operator:
+          values:

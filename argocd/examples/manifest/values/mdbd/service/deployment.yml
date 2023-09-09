@@ -1,0 +1,124 @@
+global:
+  appName: mdbd-service-prod
+  serviceGroup: mdbd
+  labels: []
+  annotations: []
+  hostAliases: []
+  env: []
+
+deployment:
+  enabled: true
+  repository: docker-registry.fbox.fpt.vn/dsc/mdbd-service
+  tag: dev-97131
+  replicaCount: 1
+  revisionHistoryLimit: 5
+  pullPolicy: IfNotPresent
+  pullSecret: docker-registry.fbox.fpt.vn
+  serviceAccount: default
+  restartPolicy: Always
+
+service:
+  enabled: true
+  type: ClusterIP
+  multiPort: false
+  ports:
+  - port: 80
+    targetPort: 9001
+    nodePort: []
+    hostPort: []
+    protocol: TCP
+
+initContainer:
+- name: sysctl-init
+  image: docker-registry.fbox.fpt.vn/tools/busybox:latest
+  command:
+  - /bin/sh
+  - -c
+  - |
+    sysctl -w net.core.somaxconn=60000
+  securityContext:
+    privileged: true
+
+strategy:
+  type: RollingUpdate
+  maxUnavailable: 0
+  maxSurge: 20%
+
+resources:
+  requests:
+    cpu: 500m
+    memory: 1000Mi
+  limits: 
+    cpu: 1000m
+    memory: 2000Mi
+
+enableProxy:
+  enabled: false
+  httpProxy: "http://proxy.hcm.fpt.vn:80"
+  noProxy: "localhost,127.0.0.1,0.0.0.0,10.0.0.0/8,cattle-system.svc,.svc,.cluster.local,172.0.0.0/8,*.fptplay.net,git.fpt.net"
+
+autoscaling:
+  enabled: true
+  minReplicas: 1
+  maxReplicas: 10
+  targetCPU: 90
+  targetMemory: 1500
+  
+  behavior:
+    enabled: false
+    scaleDown:
+      enabled: true
+      pods:
+        periodSeconds: 20
+        value: 1
+      percent:
+        periodSeconds: 20
+        value: 10
+      selectPolicy: Max
+      stabilizationWindowSeconds: 10
+
+    scaleUp:
+      enabled: true
+      pods:
+        periodSeconds: 20
+        value: 2
+      percent: 
+        periodSeconds: 20
+        value: 50
+      selectPolicy: Max
+      stabilizationWindowSeconds: 10
+
+affinity:
+  enabled: false
+  podAntiAffinity:
+    enabled: true
+    soft:
+      enabled: false 
+    weight: 100
+    key: app
+    operator: In
+    values:
+    - cache-manager
+    topologyKey: "kubernetes.io/hostname"
+
+  podAffinity:
+    enabled: false
+    soft:
+      enabled: false 
+    weight:
+    key: 
+    operator: 
+    values: []
+    topologyKey: []
+
+  nodeAffinity:
+    enabled: false
+    soft:
+      enabled: false
+    values:
+    - weight: 50
+      preference:
+        matchExpressions:
+        - key:
+          operator:
+          values:

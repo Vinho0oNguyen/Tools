@@ -1,0 +1,40 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  labels:
+    type: deployment
+  annotations:
+    argocd-image-updater.argoproj.io/git-branch: ott-prod
+    argocd-image-updater.argoproj.io/image-list: myimage=docker-registry.fbox.fpt.vn/web/fptplaytv
+    argocd-image-updater.argoproj.io/myalias.force-update: "true"
+    argocd-image-updater.argoproj.io/myimage.allow-tags: regexp:^master-.*$
+    argocd-image-updater.argoproj.io/myimage.pull-secret: secret:argo-cd/harbor-ott#credential
+    argocd-image-updater.argoproj.io/myimage.update-strategy: latest
+    argocd-image-updater.argoproj.io/write-back-method: ' git:secret:argo-cd/git-creds'
+    argocd-image-updater.argoproj.io/myimage.helm.image-name: deployment.repository
+    argocd-image-updater.argoproj.io/myimage.helm.image-tag: deployment.tag
+    notifications.argoproj.io/subscribe.out-of-sync.telegram: "-855824262"
+    notifications.argoproj.io/subscribe.on-sync-succeeded.telegram: "-855824262"
+  name: web-fptplaytv-prod
+spec:
+  destination:
+    namespace: web
+    server: https://kubernetes.default.svc
+  project: web
+  source:
+    repoURL: https://git.fpt.net/fpl/he-thong/devops/cicd-template.git
+    targetRevision: ott-prod
+    path: manifest
+    helm:
+      valueFiles:
+        - values/web/web-fptplaytv/deployment.yaml
+        - values/web/web-fptplaytv/healthcheck.yaml
+        - values/web/web-fptplaytv/ingress.yaml
+        - values/web/web-fptplaytv/cronjob.yaml
+        - values/web/web-fptplaytv/secret.yaml
+        - values/web/web-fptplaytv/volumes.yaml
+  syncPolicy:
+    # automated: {}
+    syncOptions:
+    - PruneLast=true
+    - CreateNamespace=true

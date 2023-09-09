@@ -1,0 +1,17 @@
+persistentVolume:
+  enabled: true
+  mountPath: /mnt/
+  storageClass: rook-cephfs
+  accessModes: ReadWriteMany
+  volumeMode: Filesystem
+  reclaimPolicy: Retain
+  size: 30Gi
+  hostPath:
+    enabled: true
+    nodePath: /mnt/
+    type: DirectoryOrCreate
+  nfsShare:
+    enabled: false
+    nodePath: /data
+    server: 1.2.3.4
+    readOnly: false

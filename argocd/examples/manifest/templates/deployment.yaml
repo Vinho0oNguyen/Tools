@@ -1,0 +1,296 @@
+{{- $appName := .Values.global.appName }}
+{{- if and .Values.cronjob.enabled .Values.deployment.enabled }}
+{{- fail "Both Cronjob and Deployment cannot be enabled at the same time" }}
+{{- end }}
+{{- if .Values.deployment.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $appName }}
+  labels: 
+    app: {{ $appName }}
+    {{- include "common.labels" . | nindent 4 }}
+    {{- if .Values.global.labels }}
+    {{ .Values.global.labels | toYaml | nindent 4 }}
+    {{- end }}
+  {{- if .Values.global.annotations }}
+  annotations: 
+    {{ .Values.global.annotations | toYaml | nindent 4 }}
+  {{- end }}
+spec:
+  revisionHistoryLimit: {{ .Values.deployment.revisionHistoryLimit }}
+  {{- if eq (toString .Values.autoscaling.enabled) "false" }}
+  replicas: {{ .Values.deployment.replicaCount }}
+  {{- end }}
+  strategy:
+    type: {{ .Values.strategy.type }}
+    rollingUpdate: 
+      maxUnavailable: {{ .Values.strategy.maxUnavailable }}
+      maxSurge: {{ .Values.strategy.maxSurge }}
+  selector:
+    matchLabels:
+      app: {{ $appName }}
+  template:
+    metadata:
+      labels: {{- include "common.labels" . | nindent 8 }}      
+        app: {{ $appName }}
+    spec:
+      {{- if .Values.global.hostAliases }}
+      hostAliases: {{- .Values.global.hostAliases | toYaml | nindent 8 }}
+      {{- end }}
+      restartPolicy: {{ .Values.deployment.restartPolicy }}
+      imagePullSecrets:
+      - name: {{ .Values.deployment.pullSecret }}
+      {{- if .Values.affinity.enabled }}
+      affinity:
+        {{- if .Values.affinity.podAntiAffinity.enabled }}
+        podAntiAffinity:
+          {{- if .Values.affinity.podAntiAffinity.soft.enabled }}
+          preferredDuringSchedulingIgnoredDuringExecution: 
+          - weight: {{ .Values.affinity.podAntiAffinity.weight }}
+            podAffinityTerm:
+              topologyKey: {{ .Values.affinity.podAntiAffinity.topologyKey }}
+              labelSelector:
+                matchExpressions:
+                - key: {{ .Values.affinity.podAntiAffinity.key }}
+                  operator: {{ .Values.affinity.podAntiAffinity.operator }}
+                  values: {{ .Values.affinity.podAntiAffinity.values | toYaml | nindent 16 }}
+          {{- else }}
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - topologyKey: {{ .Values.affinity.podAntiAffinity.topologyKey }}
+            labelSelector:
+              matchExpressions:
+              - key: {{ .Values.affinity.podAntiAffinity.key }}
+                operator: {{ .Values.affinity.podAntiAffinity.operator }}
+                values: {{ .Values.affinity.podAntiAffinity.values | toYaml | nindent 16 }}
+          {{- end }}
+        {{- end }}
+        {{- if .Values.affinity.podAffinity.enabled }}
+        podAffinity:
+          {{- if .Values.affinity.podAffinity.soft.enabled }}
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: {{ .Values.affinity.podAffinity.weight }}
+            podAffinityTerm:
+              topologyKey: {{ .Values.affinity.podAffinity.topologyKey }}
+              labelSelector:
+                matchExpressions:
+                - key: {{ .Values.affinity.podAffinity.key }}
+                  operator: {{ .Values.affinity.podAffinity.operator }}
+                  values: {{ .Values.affinity.podAffinity.values | toYaml | nindent 16 }}
+          {{- else }}
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: {{ .Values.affinity.podAffinity.key }}
+                operator: {{ .Values.affinity.podAffinity.operator }}
+                values: {{ .Values.affinity.podAffinity.values | toYaml | nindent 18 }}
+            topologyKey: {{ .Values.affinity.podAffinity.topologyKey }}
+          {{- end }}
+        {{- end }}
+        {{- if .Values.affinity.nodeAffinity.enabled }}
+        nodeAffinity:
+          {{- if .Values.affinity.nodeAffinity.soft.enabled }}
+          preferredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            {{- if .Values.affinity.nodeAffinity.value }}
+            {{ .Values.affinity.nodeAffinity.values | toYaml | nindent 12 }}
+            {{- end }}
+          {{- else }}
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            {{- if .Values.affinity.nodeAffinity.value }}
+            {{ .Values.affinity.nodeAffinity.values | toYaml | nindent 12 }}
+            {{- end }}
+          {{- end }}
+        {{- end }}
+      {{- end }}
+      {{- if .Values.initContainer }}
+      initContainers: {{ .Values.initContainer | toYaml | nindent 6 }}
+      {{- end }}
+      serviceAccount: {{ .Values.deployment.serviceAccount | default "default" }}
+      containers:
+      - name: {{ $appName }}
+        image: {{ .Values.deployment.repository }}:{{ .Values.deployment.tag }}
+        ports:
+        {{- range $ports := .Values.service.ports }}
+        - name: port-{{ $ports.targetPort }}
+          containerPort: {{ $ports.targetPort }}
+          {{- if $ports.hostPort }}
+          hostPort: {{ $ports.hostPort }}
+          {{- end }}
+          protocol: {{ $ports.protocol }}
+        {{- end }}
+        imagePullPolicy: {{ .Values.deployment.pullPolicy }}
+        resources:
+          requests:
+            cpu: {{ .Values.resources.requests.cpu }}
+            memory: {{ .Values.resources.requests.memory }}
+          limits:
+            cpu: {{ .Values.resources.limits.cpu }}
+            memory: {{ .Values.resources.limits.memory }}
+        {{- if or ( and .Values.healthcheck.livenessProbe.httpGet.enabled .Values.healthcheck.livenessProbe.tcpSocket.enabled ) ( and .Values.healthcheck.livenessProbe.httpGet.enabled .Values.healthcheck.livenessProbe.execCMD.enabled ) ( and .Values.healthcheck.livenessProbe.tcpSocket.enabled .Values.healthcheck.livenessProbe.execCMD.enabled ) ( and .Values.healthcheck.livenessProbe.httpGet.enabled .Values.healthcheck.livenessProbe.tcpSocket.enabled .Values.healthcheck.livenessProbe.execCMD.enabled ) }}
+        {{- fail "Either httpGet, tcpSocket and execCMD on livenessProbe section cannot be enabled at the same time" }}
+        {{- else if or .Values.healthcheck.livenessProbe.httpGet.enabled .Values.healthcheck.livenessProbe.tcpSocket.enabled .Values.healthcheck.livenessProbe.execCMD.enabled }}
+        livenessProbe:
+          {{- if .Values.healthcheck.livenessProbe.httpGet.enabled }}
+          httpGet:
+            path: {{ .Values.healthcheck.livenessProbe.httpGet.path }}
+            port: {{ .Values.healthcheck.livenessProbe.httpGet.port }}
+          {{- end }}
+          {{- if .Values.healthcheck.livenessProbe.tcpSocket.enabled }}
+          tcpSocket:
+            port: {{ .Values.healthcheck.livenessProbe.tcpSocket.port }}
+          {{- end }}
+          {{- if .Values.healthcheck.livenessProbe.execCMD.enabled }}
+          exec:
+            command: 
+            {{- .Values.healthcheck.livenessProbe.execCMD.command | toYaml | nindent 12 }}
+          {{- end }}
+          {{- with .Values.healthcheck.livenessProbe }}
+          failureThreshold: {{ .failureThreshold }}
+          initialDelaySeconds: {{ .initialDelaySeconds }}
+          periodSeconds: {{ .periodSeconds }}
+          successThreshold: {{ .successThreshold }}
+          timeoutSeconds: {{ .timeoutSeconds }}
+          {{- end }}
+        {{- end }}
+        {{- if or ( and .Values.healthcheck.readinessProbe.httpGet.enabled .Values.healthcheck.readinessProbe.tcpSocket.enabled ) ( and .Values.healthcheck.readinessProbe.httpGet.enabled .Values.healthcheck.readinessProbe.execCMD.enabled ) ( and .Values.healthcheck.readinessProbe.tcpSocket.enabled .Values.healthcheck.readinessProbe.execCMD.enabled ) ( and .Values.healthcheck.readinessProbe.httpGet.enabled .Values.healthcheck.readinessProbe.tcpSocket.enabled .Values.healthcheck.readinessProbe.execCMD.enabled ) }}
+        {{- fail "Either httpGet, tcpSocket and execCMD on readinessProbe section cannot be enabled at the same time"}}
+        {{- else if or .Values.healthcheck.readinessProbe.httpGet.enabled .Values.healthcheck.readinessProbe.tcpSocket.enabled .Values.healthcheck.readinessProbe.execCMD.enabled }}
+        readinessProbe:
+          {{- if .Values.healthcheck.readinessProbe.httpGet.enabled }}
+          httpGet:
+            path: {{ .Values.healthcheck.readinessProbe.httpGet.path }}
+            port: {{ .Values.healthcheck.readinessProbe.httpGet.port }}
+          {{- end }}
+          {{- if .Values.healthcheck.readinessProbe.tcpSocket.enabled }}
+          tcpSocket:
+            port: {{ .Values.healthcheck.readinessProbe.tcpSocket.port }}
+          {{- end }}
+          {{- if .Values.healthcheck.readinessProbe.execCMD.enabled }}
+          exec:
+            command:
+            {{- .Values.healthcheck.readinessProbe.execCMD.command | toYaml | nindent 12 }}
+          {{- end }}
+          {{- with .Values.healthcheck.readinessProbe }}
+          initialDelaySeconds: {{ .initialDelaySeconds }}
+          timeoutSeconds: {{ .timeoutSeconds }}
+          failureThreshold: {{ .failureThreshold }}
+          successThreshold: {{ .successThreshold }}
+          periodSeconds: {{ .periodSeconds }}
+          {{- end }}
+        {{- end }}
+        {{- if .Values.healthcheck.lifecycle }}
+        lifecycle: {{ .Values.healthcheck.lifecycle | toYaml | nindent 10 }}         
+        {{- end }}
+        {{- if or .Values.global.env .Values.enableProxy.enabled }}
+        env:
+        {{- if .Values.global.env }}
+        {{ .Values.global.env | toYaml | nindent 10 }}
+        {{- end }}
+        {{- if .Values.enableProxy.enabled }}
+        {{- if .Values.enableProxy.httpProxy }}
+        - name: HTTP_PROXY
+          value: {{ .Values.enableProxy.httpProxy | quote }}
+        - name: http_proxy
+          value: {{ .Values.enableProxy.httpProxy | quote }}
+        {{- end }}
+        {{- if .Values.enableProxy.httpsProxy }}
+        - name: HTTPS_PROXY
+          value: {{ .Values.enableProxy.httpsProxy | quote }}
+        - name: https_proxy
+          value: {{ .Values.enableProxy.httpsProxy | quote }}
+        {{- end }}
+        {{- if .Values.enableProxy.noProxy }}
+        - name: NO_PROXY
+          value: {{ .Values.enableProxy.noProxy | quote }}
+        - name: no_proxy
+          value: {{ .Values.enableProxy.noProxy | quote }}
+        {{- end }}
+        {{- end }}
+        {{- end }}
+        {{- if or ( and .Values.extSecret.enabled .Values.extSecret.osEnv.enabled ) ( or ( and .Values.customSecret.enabled .Values.customSecret.osEnv.enabled ) ( and .Values.customCM.enabled .Values.customCM.osEnv.enabled ) ) }}
+        envFrom:
+        {{- if and .Values.extSecret.enabled .Values.extSecret.osEnv.enabled }}
+        - secretRef:
+            name: {{ $appName }}-ext
+        {{- end }}
+        {{- if and .Values.customSecret.enabled .Values.customSecret.osEnv.enabled }}
+        - secretRef:
+            name: {{ .Values.customSecret.secretName }}
+        {{- end }}
+        {{- if and .Values.customCM.enabled .Values.customCM.osEnv.enabled }}
+        {{- if .Values.customCM.cmName }}
+        - configMapRef:
+            name: {{ .Values.customCM.cmName }}
+        {{- else }}
+        - configMapRef:
+            name: {{ $appName }}
+        {{- end }}
+        {{- end }}
+        {{- end }}
+        {{- if or .Values.persistentVolume.enabled ( and .Values.extSecret.enabled ( not .Values.extSecret.osEnv.enabled ) ) ( and .Values.customSecret.enabled ( not .Values.customSecret.osEnv.enabled ) ) ( and .Values.customCM.enabled ( not .Values.customCM.osEnv.enabled ) ) }}
+        volumeMounts:
+        {{- if and .Values.extSecret.enabled ( not .Values.extSecret.osEnv.enabled ) }}
+        {{- range $ext := .Values.extSecret.volumeMount }}
+        - name: {{ $appName }}-ext
+          mountPath: {{ $ext.mountPath }}
+          subPath: {{ $ext.subPath }}
+          readOnly: {{ $ext.readOnly }}
+        {{- end }}
+        {{- end }}
+        {{- if and .Values.customSecret.enabled ( not .Values.customSecret.osEnv.enabled ) }}
+        {{- range $custom := .Values.customSecret.volumeMount }}
+        - name: {{ $appName }}-secret
+          mountPath: {{ $custom.mountPath }}
+          subPath: {{ $custom.subPath }}
+          readOnly: {{ $custom.readOnly }}
+        {{- end }}
+        {{- end }}
+        {{- if and .Values.customCM.enabled ( not .Values.customCM.osEnv.enabled ) }}
+        {{- range $customCM := .Values.customCM.volumeMount }}
+        - name: {{ $appName }}-cm
+          mountPath: {{ $customCM.mountPath }}
+          subPath: {{ $customCM.subPath }}
+          readOnly: {{ $customCM.readOnly }}
+        {{- end }}
+        {{- end }}
+        {{- if .Values.persistentVolume.enabled }}
+        - name: {{ $appName }}-pvc
+          mountPath: {{ .Values.persistentVolume.mountPath }}
+        {{- end }}
+        {{- end }}
+      {{- if or .Values.persistentVolume.enabled ( and .Values.extSecret.enabled ( not .Values.extSecret.osEnv.enabled ) ) ( and .Values.customSecret.enabled ( not .Values.customSecret.osEnv.enabled ) ) ( and .Values.customCM.enabled ( not .Values.customCM.osEnv.enabled ) ) }}
+      volumes: 
+      {{- if and .Values.extSecret.enabled ( not .Values.extSecret.osEnv.enabled ) }}
+      - name: {{ $appName }}-ext
+        secret:
+          secretName: {{ $appName }}-ext
+          defaultMode: 0{{ .Values.extSecret.defaultMode }}
+      {{- end }}
+      {{- if and .Values.customSecret.enabled ( not .Values.customSecret.osEnv.enabled ) }}
+      - name: {{ $appName }}-secret
+        secret:
+          secretName: {{ .Values.customSecret.secretName }}
+          defaultMode: 0{{ .Values.customSecret.defaultMode }}
+      {{- end }}
+      {{- if and .Values.customCM.enabled ( not .Values.customCM.osEnv.enabled ) }}
+      {{- if .Values.customCM.cmName }}
+      - name: {{ $appName }}-cm
+        configMap:
+          name: {{ .Values.customCM.cmName }}
+          defaultMode: 0{{ .Values.customCM.defaultMode }}
+      {{- else }}
+      - name: {{ $appName }}-cm
+        configMap:
+          name: {{ $appName }}
+          defaultMode: 0{{ .Values.customCM.defaultMode }}
+      {{- end }}
+      {{- end }}
+      {{- if .Values.persistentVolume.enabled }}
+      - name: {{ $appName }}-pvc
+        persistentVolumeClaim: 
+          claimName: {{ $appName }}-pvc
+      {{- end }}
+    {{- end }}
+{{- end }}

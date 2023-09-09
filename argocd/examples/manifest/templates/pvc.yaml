@@ -1,0 +1,20 @@
+{{- $appName := .Values.global.appName }}
+{{- if .Values.persistentVolume.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ $appName }}-pvc
+spec:
+  {{- if .Values.persistentVolume.storageClass }}
+  storageClassName: {{ .Values.persistentVolume.storageClass | quote }}
+  {{- end }}
+  accessModes: 
+  - {{ .Values.persistentVolume.accessModes | quote }}
+  volumeMode: {{ .Values.persistentVolume.volumeMode | quote }}
+  {{- if .Values.persistentVolume.volumeBindingMode }}
+  volumeBindingModeName: {{ .Values.persistentVolume.volumeBindingMode | quote }}
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ .Values.persistentVolume.size | quote }}
+{{- end }}

@@ -1,0 +1,17 @@
+persistentVolume:
+  enabled: false
+  mountPath: '/data/web-fptplay/'
+  storageClass: rook-cephfs
+  accessModes: ReadWriteMany
+  volumeMode: Filesystem
+  reclaimPolicy: Delete
+  size: 100Gi
+  hostPath:
+    enabled: false
+    nodePath: /mnt/data
+    type: DirectoryOrCreate
+  nfsShare:
+    enabled: false
+    nodePath: /data
+    server: 1.2.3.4
+    readOnly: false

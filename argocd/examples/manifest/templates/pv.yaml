@@ -1,0 +1,37 @@
+{{- $appName := .Values.global.appName }}
+{{- if and .Values.persistentVolume.enabled ( or .Values.persistentVolume.hostPath.enabled .Values.persistentVolume.nfsShare.enabled ) }}
+{{- if and .Values.persistentVolume.hostPath.enabled .Values.persistentVolume.nfsShare.enabled }}
+{{- fail "Both HostPath and NFS cannot be enabled at the same time" }}
+{{- end }}
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: {{ $appName }}-pv
+  labels:
+    {{- if .Values.persistentVolume.hostPath.enabled }}
+    type: HostPath
+    {{- else }}
+    type: NFS Share
+    {{- end }}
+spec:
+  {{- if ( empty .Values.persistentVolume.storageClass) }}
+  storageClassName: ""
+  {{- else }}
+  storageClassName: {{ .Values.persistentVolume.storageClass | quote }}
+  {{- end }}
+  capacity:
+    storage: {{ .Values.persistentVolume.size | quote }}
+  accessModes:
+    - {{ .Values.persistentVolume.accessModes | quote }}
+  persistentVolumeReclaimPolicy: {{ .Values.persistentVolume.reclaimPolicy | quote }}
+  {{- if and .Values.persistentVolume.hostPath.enabled ( not .Values.persistentVolume.nfsShare.enabled ) }}
+  hostPath:
+    path: {{ .Values.persistentVolume.hostPath.nodePath | quote }}
+    type: {{ .Values.persistentVolume.hostPath.type | quote }}
+  {{- else }}
+  nfs:
+    path: {{ .Values.persistentVolume.nfsShare.nodePath | quote }}
+    server: {{ .Values.persistentVolume.nfsShare.server | quote }}
+    readOnly: {{ .Values.persistentVolume.nfsShare.readOnly }}
+  {{- end }}
+{{- end }}

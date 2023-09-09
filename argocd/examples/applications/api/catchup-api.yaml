@@ -1,0 +1,40 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: catchup-api
+  labels:
+    project: api
+  annotations:
+    argocd-image-updater.argoproj.io/git-branch: ott-prod
+    argocd-image-updater.argoproj.io/image-list: api=docker-registry.fbox.fpt.vn/tools/catchup-api
+    argocd-image-updater.argoproj.io/api.force-update: 'true'
+    argocd-image-updater.argoproj.io/api.allow-tags: regexp:^master*
+    argocd-image-updater.argoproj.io/api.pull-secret: pullsecret:argo-cd/docker-registry.fbox.fpt.vn
+    argocd-image-updater.argoproj.io/api.update-strategy: latest
+    argocd-image-updater.argoproj.io/api.helm.image-name: deployment.repository
+    argocd-image-updater.argoproj.io/api.helm.image-tag: deployment.tag
+    argocd-image-updater.argoproj.io/write-back-method: git:secret:argo-cd/git-creds
+spec:
+  project: api
+  destination:
+    namespace: api
+    server: https://kubernetes.default.svc
+  source:
+    repoURL: https://git.fpt.net/fpl/he-thong/devops/cicd-template.git
+    path: manifest
+    targetRevision: ott-prod
+    helm:
+      valueFiles:
+      - values/api/catchup-api/deployment.yaml
+      - values/api/catchup-api/healthcheck.yaml
+      - values/api/catchup-api/ingress.yaml
+      - values/api/catchup-api/cronjob.yaml
+      - values/api/catchup-api/secret.yaml
+      - values/api/catchup-api/volumes.yaml
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+    - PruneLast=true
+    - CreateNamespace=true

@@ -1,0 +1,39 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  labels:
+    type: deployment
+  annotations:
+    argocd-image-updater.argoproj.io/git-branch: ott-prod
+    argocd-image-updater.argoproj.io/image-list: myimage=docker-registry.fbox.fpt.vn/api/cicd_bot
+    argocd-image-updater.argoproj.io/myalias.force-update: "true"
+    argocd-image-updater.argoproj.io/myimage.allow-tags: regexp:master-.*$
+    argocd-image-updater.argoproj.io/myimage.pull-secret: secret:argo-cd/harbor-ott#credential
+    argocd-image-updater.argoproj.io/myimage.update-strategy: latest
+    argocd-image-updater.argoproj.io/write-back-method: ' git:secret:argo-cd/git-creds'
+    argocd-image-updater.argoproj.io/myimage.helm.image-name: deployment.repository
+    argocd-image-updater.argoproj.io/myimage.helm.image-tag: deployment.tag
+    notifications.argoproj.io/subscribe.out-of-sync.telegram: "-855824262"
+    notifications.argoproj.io/subscribe.on-sync-succeeded.telegram: "-855824262"
+  name: api-cicd-bot-prod-fpl
+spec:
+  destination:
+    namespace: api
+    server: https://kubernetes.default.svc
+  project: system
+  source:
+    helm:
+      valueFiles:
+      - values/example/cicd-bot/deployment.yaml
+      - values/example/cicd-bot/healthcheck.yaml
+      - values/example/cicd-bot/ingress.yaml
+      - values/example/cicd-bot/cronjob.yaml
+      - values/example/cicd-bot/secret.yaml
+      - values/example/cicd-bot/volumes.yaml
+    path: manifest
+    repoURL: https://git.fpt.net/fpl/he-thong/devops/cicd-template.git
+    targetRevision: ott-prod
+  syncPolicy:
+    syncOptions:
+    - PruneLast=true
+    - CreateNamespace=true

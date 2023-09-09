@@ -1,0 +1,39 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  labels:
+    type: deployment
+  annotations:
+    argocd-image-updater.argoproj.io/git-branch: ott-prod
+    argocd-image-updater.argoproj.io/image-list: myimage=docker-registry.fbox.fpt.vn/api/go-cms-comment
+    argocd-image-updater.argoproj.io/myalias.force-update: "true"
+    argocd-image-updater.argoproj.io/myimage.allow-tags: regexp:^master-build-.*$
+    argocd-image-updater.argoproj.io/myimage.pull-secret: secret:argo-cd/harbor-ott#credential
+    argocd-image-updater.argoproj.io/myimage.update-strategy: latest
+    argocd-image-updater.argoproj.io/write-back-method: 'git:secret:argo-cd/git-creds'
+    argocd-image-updater.argoproj.io/myimage.helm.image-name: deployment.repository
+    argocd-image-updater.argoproj.io/myimage.helm.image-tag: deployment.tag
+    notifications.argoproj.io/subscribe.out-of-sync.telegram: "-987170400"
+    notifications.argoproj.io/subscribe.on-sync-succeeded.telegram: "-987170400"
+  name: api-go-cms-comment-prod-fpl
+spec:
+  destination:
+    namespace: api
+    server: https://kubernetes.default.svc
+  project: api
+  source:
+    helm:
+      valueFiles:
+      - values/api/go-cms-comment/deployment.yaml
+      - values/api/go-cms-comment/healthcheck.yaml
+      - values/api/go-cms-comment/ingress.yaml
+      - values/api/go-cms-comment/cronjob.yaml
+      - values/api/go-cms-comment/secret.yaml
+      - values/api/go-cms-comment/volumes.yaml
+    path: manifest
+    repoURL: https://git.fpt.net/fpl/he-thong/devops/cicd-template.git
+    targetRevision: ott-prod
+  syncPolicy:
+    syncOptions:
+    - PruneLast=true
+    - CreateNamespace=true

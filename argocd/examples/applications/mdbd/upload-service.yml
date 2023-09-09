@@ -1,0 +1,40 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: mdbd-upload-service-prod
+  labels:
+    project: default
+  annotations:
+    argocd-image-updater.argoproj.io/git-branch: ott-prod
+    argocd-image-updater.argoproj.io/image-list: mdbd=docker-registry.fbox.fpt.vn/dsc/mdbd-upload-service
+    argocd-image-updater.argoproj.io/mdbd.force-update: 'true'
+    argocd-image-updater.argoproj.io/mdbd.allow-tags: regexp:dev-.*$
+    argocd-image-updater.argoproj.io/mdbd.pull-secret: pullsecret:argo-cd/docker-registry.fbox.fpt.vn
+    argocd-image-updater.argoproj.io/mdbd.update-strategy: latest
+    argocd-image-updater.argoproj.io/mdbd.helm.image-name: deployment.repository
+    argocd-image-updater.argoproj.io/mdbd.helm.image-tag: deployment.tag
+    argocd-image-updater.argoproj.io/write-back-method: git:secret:argo-cd/git-creds
+spec:
+  project: default
+  destination:
+    namespace: mdbd
+    server: https://kubernetes.default.svc
+  source:
+    repoURL: https://git.fpt.net/fpl/he-thong/devops/cicd-template.git
+    path: manifest
+    targetRevision: ott-prod
+    helm:
+      valueFiles:
+      - values/mdbd/upload-service/deployment.yml
+      - values/mdbd/upload-service/healthcheck.yml
+      - values/mdbd/upload-service/ingress.yml
+      - values/mdbd/upload-service/cronjob.yml
+      - values/mdbd/upload-service/secret.yml
+      - values/mdbd/upload-service/volumes.yml
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+    - PruneLast=true
+    - CreateNamespace=true

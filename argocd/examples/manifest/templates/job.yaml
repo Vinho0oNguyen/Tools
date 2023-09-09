@@ -1,0 +1,155 @@
+{{- $appName := .Values.global.appName }}
+{{- if and .Values.cronjob.enabled .Values.job.enabled }}
+{{- fail "Both Cronjob and Job cannot be enabled at the same time" }}
+{{- end }}
+{{- if .Values.job.enabled }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ $appName }}-job
+  labels:
+    app: {{ $appName }}
+    {{- include "common.labels" . | nindent 4 }}
+    {{- if .Values.global.labels }}
+    {{ .Values.global.labels | toYaml | nindent 4 }}
+    {{- end }}
+  annotations:
+    {{- if .Values.global.annotations }}
+    {{ .Values.global.annotations | toYaml | nindent 4 }}
+    {{- end }}
+    argocd.argoproj.io/hook: {{ .Values.job.hook }}
+    argocd.argoproj.io/hook-delete-policy: {{ .Values.job.deleteHook }}
+spec:
+  template:
+    spec:
+      {{- if .Values.job.hostAliases }}
+      hostAliases: {{- .Values.job.hostAliases | toYaml | nindent 6 }}
+      {{- end }}
+      containers:
+      - name: {{ $appName }}-job
+        image: {{ .Values.job.image.repository}}:{{ .Values.job.image.tag }}
+        {{- if .Values.job.image.pullSecrets }}
+        imagePullSecrets:
+        - name: {{ .Values.job.image.pullSecrets}}
+        {{- end }}
+        command: [{{ .Values.job.command | quote }}]
+        args: {{- .Values.job.args | toYaml | nindent 8 }}
+        {{- if .Values.job.resources.enabled }}
+        resources:
+          requests:
+            cpu: {{ .Values.job.resources.requests.cpu }}
+            memory: {{ .Values.job.resources.requests.memory }}
+          limits:
+            cpu: {{ .Values.job.resources.limits.cpu }}
+            memory: {{ .Values.job.resources.limits.memory }}
+        {{- end }}
+        {{- if or .Values.job.env .Values.job.enableProxy.enabled }}
+        env:
+        {{- if .Values.job.env }}
+        {{- .Values.job.env | toYaml | nindent 8 }}
+        {{- end }}
+        {{- if .Values.job.enableProxy.enabled }}
+        {{- if .Values.job.enableProxy.httpProxy }}
+        - name: HTTP_PROXY
+          value: {{ .Values.job.enableProxy.httpProxy }}
+        - name: http_proxy
+          value: {{ .Values.job.enableProxy.httpProxy }}
+        {{- end }}
+        {{- if .Values.job.enableProxy.httpsProxy }}
+        - name: HTTPS_PROXY
+          value: {{ .Values.job.enableProxy.httpsProxy }}
+        - name: https_proxy
+          value: {{ .Values.job.enableProxy.httpsProxy }}
+        {{- end }}
+        {{- if .Values.job.enableProxy.noProxy }}
+        - name: no_proxy
+          value: {{ .Values.job.enableProxy.noProxy }}
+        - name: NO_PROXY
+          value: {{ .Values.job.enableProxy.noProxy }}
+        {{- end }}
+        {{- end }}
+        {{- end }}
+        {{- if eq .Values.job.useVolumes true }}
+        {{- if or ( and .Values.extSecret.enabled .Values.extSecret.osEnv.enabled ) ( or ( and .Values.customSecret.enabled .Values.customSecret.osEnv.enabled ) ( and .Values.customCM.enabled .Values.customCM.osEnv.enabled ) ) }}
+        envFrom:
+        {{- if and .Values.extSecret.enabled .Values.extSecret.osEnv.enabled }}
+        - secretRef:
+            name: {{ $appName }}-ext
+        {{- end }}
+        {{- if and .Values.customSecret.enabled .Values.customSecret.osEnv.enabled }}
+        - secretRef:
+            name: {{ .Values.customSecret.secretName }}
+        {{- end }}
+        {{- if and .Values.customCM.enabled .Values.customCM.osEnv.enabled }}
+        - configMapRef:
+            name: {{ $appName }}
+        {{- end }}
+        {{- end }}
+        {{- if or .Values.persistentVolume.enabled ( and .Values.extSecret.enabled ( not .Values.extSecret.osEnv.enabled ) ) ( and .Values.customSecret.enabled ( not .Values.customSecret.osEnv.enabled ) ) ( and .Values.customCM.enabled ( not .Values.customCM.osEnv.enabled ) ) }}
+        volumeMounts:
+        {{- if and .Values.extSecret.enabled ( not .Values.extSecret.osEnv.enabled ) }}
+        {{- range $ext := .Values.extSecret.volumeMount }}
+        - name: {{ $appName }}-ext
+          mountPath: {{ $ext.mountPath }}
+          subPath: {{ $ext.subPath }}
+          readOnly: {{ $ext.readOnly }}
+        {{- end }}
+        {{- end }}
+        {{- if and .Values.customSecret.enabled ( not .Values.customSecret.osEnv.enabled ) }}
+        {{- range $custom := .Values.customSecret.volumeMount }}
+        - name: {{ $appName }}-secret
+          mountPath: {{ $custom.mountPath }}
+          subPath: {{ $custom.subPath }}
+          readOnly: {{ $custom.readOnly }}
+        {{- end }}
+        {{- end }}
+        {{- if and .Values.customCM.enabled ( not .Values.customCM.osEnv.enabled ) }}
+        {{- range $customCM := .Values.customCM.volumeMount }}
+        - name: {{ $appName }}-cm
+          mountPath: {{ $customCM.mountPath }}
+          subPath: {{ $customCM.subPath }}
+          readOnly: {{ $customCM.readOnly }}
+        {{- end }}
+        {{- end }}
+        {{- if .Values.persistentVolume.enabled }}
+        - name: {{ $appName }}-pvc
+          mountPath: {{ .Values.persistentVolume.mountPath }}
+        {{- end }}
+        {{- end }}
+      {{- if or .Values.persistentVolume.enabled ( and .Values.extSecret.enabled ( not .Values.extSecret.osEnv.enabled ) ) ( and .Values.customSecret.enabled ( not .Values.customSecret.osEnv.enabled ) ) ( and .Values.customCM.enabled ( not .Values.customCM.osEnv.enabled ) ) }}
+      volumes: 
+      {{- if and .Values.extSecret.enabled ( not .Values.extSecret.osEnv.enabled ) }}
+      - name: {{ $appName }}-ext
+        secret:
+          secretName: {{ $appName }}-ext
+          defaultMode: 0{{ .Values.extSecret.defaultMode }}
+      {{- end }}
+      {{- if and .Values.customSecret.enabled ( not .Values.customSecret.osEnv.enabled ) }}
+      - name: {{ $appName }}-secret
+        secret:
+          secretName: {{ .Values.customSecret.secretName }}
+          defaultMode: 0{{ .Values.customSecret.defaultMode }}
+      {{- end }}
+      {{- if and .Values.customCM.enabled ( not .Values.customCM.osEnv.enabled ) }}
+      {{- if .Values.customCM.cmName }}
+      - name: {{ $appName }}-cm
+        configMap:
+          name: {{ .Values.customCM.cmName }}
+          defaultMode: 0{{ .Values.customCM.defaultMode }}
+      {{- else }}
+      - name: {{ $appName }}-cm
+        configMap:
+          name: {{ $appName }}
+          defaultMode: 0{{ .Values.customCM.defaultMode }}
+      {{- end }}
+      {{- end }}
+      {{- if .Values.persistentVolume.enabled }}
+      - name: {{ $appName }}-pvc
+        persistentVolumeClaim: 
+          claimName: {{ $appName }}-pvc
+      {{- end }}
+      {{- end }}
+      {{- end }}
+      restartPolicy: {{ .Values.job.restartPolicy | default "Never" }}
+  backoffLimit: {{ .Values.job.backoffLimit | default "3" }}
+{{- end }}

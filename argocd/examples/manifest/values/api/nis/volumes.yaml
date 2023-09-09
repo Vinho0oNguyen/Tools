@@ -1,0 +1,17 @@
+persistentVolume:
+  enabled: false
+  mountPath: /src/log/activities_log
+  storageClass: rook-cephfs
+  accessModes: ReadWriteMany
+  volumeMode: Filesystem
+  reclaimPolicy: Delete
+  size: 30Gi
+  hostPath:
+    enabled: true
+    nodePath: /data/nis
+    type: DirectoryOrCreate
+  nfsShare:
+    enabled: false
+    nodePath: /data
+    server: 1.2.3.4
+    readOnly: false

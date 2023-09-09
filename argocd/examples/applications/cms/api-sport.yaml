@@ -1,0 +1,40 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  labels:
+    type: deployment
+  annotations:
+    argocd-image-updater.argoproj.io/git-branch: ott-prod
+    argocd-image-updater.argoproj.io/image-list: myimage=docker-registry.fbox.fpt.vn/cms/api-sport
+    argocd-image-updater.argoproj.io/myalias.force-update: "true"
+    argocd-image-updater.argoproj.io/myimage.allow-tags: regexp:^master-.*$
+    argocd-image-updater.argoproj.io/myimage.pull-secret: secret:argo-cd/harbor-ott#credential
+    argocd-image-updater.argoproj.io/myimage.update-strategy: latest
+    argocd-image-updater.argoproj.io/write-back-method: ' git:secret:argo-cd/git-creds'
+    argocd-image-updater.argoproj.io/myimage.helm.image-name: deployment.repository
+    argocd-image-updater.argoproj.io/myimage.helm.image-tag: deployment.tag
+    notifications.argoproj.io/subscribe.out-of-sync.telegram: "-855824262"
+    notifications.argoproj.io/subscribe.on-sync-succeeded.telegram: "-855824262"
+  name: cms-api-sport-prod
+spec:
+  destination:
+    namespace: cms
+    server: https://kubernetes.default.svc
+  project: cms
+  source:
+    repoURL: https://git.fpt.net/fpl/he-thong/devops/cicd-template.git
+    targetRevision: ott-prod
+    path: manifest
+    helm:
+      valueFiles:
+        - values/cms/api-sport/deployment.yaml
+        - values/cms/api-sport/healthcheck.yaml
+        - values/cms/api-sport/ingress.yaml
+        - values/cms/api-sport/cronjob.yaml
+        - values/cms/api-sport/secret.yaml
+        - values/cms/api-sport/volumes.yaml
+  syncPolicy:
+    # automated: {}
+    syncOptions:
+    - PruneLast=true
+    - CreateNamespace=true

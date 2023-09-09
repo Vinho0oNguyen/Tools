@@ -1,0 +1,40 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: ads-itvad-wordpress-prod
+  labels:
+    project: ads
+  annotations:
+    argocd-image-updater.argoproj.io/git-branch: ott-prod
+    argocd-image-updater.argoproj.io/image-list: ads=docker-registry.fbox.fpt.vn/ads/itvad-wordpress
+    argocd-image-updater.argoproj.io/ads.force-update: 'true'
+    argocd-image-updater.argoproj.io/ads.allow-tags: regexp:^master-.*$
+    argocd-image-updater.argoproj.io/ads.pull-secret: secret:argo-cd/harbor-ott#credential
+    argocd-image-updater.argoproj.io/ads.update-strategy: latest
+    argocd-image-updater.argoproj.io/write-back-method: ' git:secret:argo-cd/git-creds'
+    argocd-image-updater.argoproj.io/ads.helm.image-name: deployment.repository
+    argocd-image-updater.argoproj.io/ads.helm.image-tag: deployment.tag
+    notifications.argoproj.io/subscribe.out-of-sync.telegram: "-855824262"
+    notifications.argoproj.io/subscribe.on-sync-succeeded.telegram: "-855824262"
+spec:
+  project: ads
+  destination:
+    namespace: ads
+    server: https://kubernetes.default.svc
+  source:
+    repoURL: https://git.fpt.net/fpl/he-thong/devops/cicd-template.git
+    targetRevision: ott-prod
+    path: manifest
+    helm:
+      valueFiles:
+      - values/ads/itvad-wordpress/deployment.yaml
+      - values/ads/itvad-wordpress/healthcheck.yaml
+      - values/ads/itvad-wordpress/ingress.yaml
+      - values/ads/itvad-wordpress/cronjob.yaml
+      - values/ads/itvad-wordpress/secret.yaml
+      - values/ads/itvad-wordpress/volumes.yaml
+  syncPolicy:
+    # automated: {}
+    syncOptions:
+    - PruneLast=true
+    - CreateNamespace=true

@@ -1,0 +1,41 @@
+{{- $appName := .Values.global.appName }}
+{{- $portType := .Values.service.type }}
+{{- $portSize := len .Values.service.ports }}
+{{- if and ( eq .Values.service.multiPort false ) ( gt $portSize 1 ) }}
+{{- fail "Service multiPort flag is disabled" }}
+{{- end }}
+{{- if .Values.service.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $appName }}
+  labels:
+    app: {{ $appName }}
+    {{- include "common.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.type | default "ClusterIP" }}
+  ports:
+  {{- if eq .Values.service.multiPort true }}
+  {{- range $ports := .Values.service.ports }}
+  - name: {{ $appName }}-{{ $ports.port }}
+    port: {{ $ports.port }}
+    targetPort: {{ $ports.targetPort }}
+    {{- if and ( eq $portType "NodePort" ) ( $ports.nodePort ) }}
+    nodePort: {{ $ports.nodePort }}
+    {{- end }}
+    protocol: {{ $ports.protocol }}
+  {{- end }}
+  {{- else }}
+  {{- range $ports := .Values.service.ports }}
+  - name: {{ $appName }}
+    port: {{ $ports.port }}
+    targetPort: {{ $ports.targetPort }}
+    {{- if and ( eq $portType "NodePort" ) ( $ports.nodePort ) }}
+    nodePort: {{ $ports.nodePort }}
+    {{- end }}
+    protocol: {{ $ports.protocol }}
+  {{- end }}
+  {{- end }}
+  selector:
+    app: {{ $appName }}
+{{- end }}

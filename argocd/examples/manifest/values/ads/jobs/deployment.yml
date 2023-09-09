@@ -1,0 +1,131 @@
+global:
+  appName: ads-jobs-prod
+  serviceGroup: ads
+  labels: []
+  annotations: []
+  hostAliases:
+  - ip: 42.116.8.187
+    hostnames:
+    - db01-ads.prod.hcm.fplay
+  - ip: 42.116.8.188
+    hostnames:
+    - db02-ads.prod.hcm.fplay
+  env: []
+
+deployment:
+  enabled: true
+  repository: harbor.fptplay.net/fplay-ads/adsplay-jobs
+  tag: master-build-117814
+  replicaCount: 1
+  revisionHistoryLimit: 5
+  pullPolicy: IfNotPresent
+  pullSecret: harbor.fptplay.net
+  serviceAccount: default
+  restartPolicy: Always
+
+service:
+  enabled: false
+  type: ClusterIP
+  multiPort: false
+  ports:
+  - port: 80
+    targetPort: 8089
+    nodePort: []
+    hostPort: []
+    protocol: TCP
+
+initContainer:
+- name: sysctl-init
+  image: harbor.fptplay.net/image-base/busybox:latest
+  command:
+  - /bin/sh
+  - -c
+  - |
+    sysctl -w net.core.somaxconn=60000
+  securityContext:
+    privileged: true
+
+strategy:
+  type: RollingUpdate
+  maxUnavailable: 0
+  maxSurge: 50%
+
+resources:
+  requests:
+    cpu: 500m
+    memory: 500Mi
+  limits: 
+    cpu: 700m
+    memory: 700Mi
+
+enableProxy:
+  enabled: true
+  httpProxy: "http://proxy.fpt.vn:80"
+  httpsProxy: "http://proxy.fpt.vn:80"
+  noProxy: "localhost,127.0.0.1,0.0.0.0,10.0.0.0/8,cattle-system.svc,.svc,.cluster.local,172.0.0.0/8,*.fptplay.net,git.fpt.net"
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 4
+  targetCPU: 90
+  targetMemory: 400
+  
+  behavior:
+    enabled: false
+    scaleDown:
+      enabled: true
+      pods:
+        periodSeconds: 20
+        value: 1
+      percent:
+        periodSeconds: 20
+        value: 10
+      selectPolicy: Max
+      stabilizationWindowSeconds: 10
+
+    scaleUp:
+      enabled: true
+      pods:
+        periodSeconds: 20
+        value: 2
+      percent: 
+        periodSeconds: 20
+        value: 50
+      selectPolicy: Max
+      stabilizationWindowSeconds: 10
+
+affinity:
+  enabled: false
+  podAntiAffinity:
+    enabled: true
+    soft:
+      enabled: false 
+    weight: 100
+    key: app
+    operator: In
+    values:
+    - cache-manager
+    topologyKey: "kubernetes.io/hostname"
+
+  podAffinity:
+    enabled: false
+    soft:
+      enabled: false 
+    weight:
+    key: 
+    operator: 
+    values: []
+    topologyKey: []
+
+  nodeAffinity:
+    enabled: false
+    soft:
+      enabled: false
+    values:
+    - weight: 50
+      preference:
+        matchExpressions:
+        - key:
+          operator:
+          values:

@@ -1,0 +1,59 @@
+{{- $appName := .Values.global.appName }}
+{{- if .Values.autoscaling.enabled }}
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ $appName }}
+  labels: {{- include "common.labels" . | nindent 4 }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ $appName }}
+  minReplicas: {{ .Values.autoscaling.minReplicas }}
+  maxReplicas: {{ .Values.autoscaling.maxReplicas }}
+  {{- if .Values.autoscaling.behavior.enabled}}
+  behavior:
+    {{- if .Values.autoscaling.behavior.scaleDown.enabled }}
+    scaleDown:
+      policies:
+      - periodSeconds: {{ .Values.autoscaling.behavior.scaleDown.pods.periodSeconds }}
+        type: Pods
+        value: {{ .Values.autoscaling.behavior.scaleDown.pods.value }}
+      - periodSeconds: {{ .Values.autoscaling.behavior.scaleDown.percent.periodSeconds }}
+        type: Percent
+        value: {{ .Values.autoscaling.behavior.scaleDown.percent.value }}
+      selectPolicy: {{ .Values.autoscaling.behavior.scaleDown.selectPolicy }}
+      stabilizationWindowSeconds: {{ .Values.autoscaling.behavior.scaleDown.stabilizationWindowSeconds }}
+    {{- end }}
+    {{- if .Values.autoscaling.behavior.scaleUp.enabled }}
+    scaleUp:
+      policies:
+      - periodSeconds: {{ .Values.autoscaling.behavior.scaleUp.pods.periodSeconds }}
+        type: Pods
+        value: {{ .Values.autoscaling.behavior.scaleUp.pods.value }}
+      - periodSeconds: {{ .Values.autoscaling.behavior.scaleUp.percent.periodSeconds }}
+        type: Percent
+        value: {{ .Values.autoscaling.behavior.scaleUp.percent.value }}
+      selectPolicy: {{ .Values.autoscaling.behavior.scaleUp.selectPolicy }}
+      stabilizationWindowSeconds: {{ .Values.autoscaling.behavior.scaleUp.stabilizationWindowSeconds }}
+    {{- end }}
+  {{- end }}
+  metrics:
+  {{- if .Values.autoscaling.targetMemory }}
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: {{ .Values.autoscaling.targetMemory }}
+  {{- end }}
+  {{- if .Values.autoscaling.targetCPU }}
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: {{ .Values.autoscaling.targetCPU }}
+  {{- end }}
+{{- end }}

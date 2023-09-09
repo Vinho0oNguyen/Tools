@@ -1,0 +1,43 @@
+healthcheck:
+  livenessProbe:
+    httpGet:
+      enabled: false
+      path: /healthz
+      port: 5000
+    tcpSocket:
+      enabled: false
+      port: 5000
+    execCMD:
+      enabled: false
+      command:
+      - cat
+      - /etc/hosts
+    failureThreshold: 3
+    initialDelaySeconds: 15
+    periodSeconds: 20
+    successThreshold: 1
+    timeoutSeconds: 1
+
+  readinessProbe:
+    httpGet:
+      enabled: false
+      path: /healthz
+      port: 5000
+    tcpSocket:
+      enabled: false
+      port: 5000
+    execCMD:
+      enabled: false
+      command:
+      - cat
+      - /etc/hosts
+    failureThreshold: 3
+    initialDelaySeconds: 15
+    periodSeconds: 20
+    successThreshold: 1
+    timeoutSeconds: 1
+
+  lifecycle:
+    preStop:
+      exec:
+        command: ["sh","-c","sleep 10"]

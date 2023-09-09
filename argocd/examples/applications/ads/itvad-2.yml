@@ -1,0 +1,40 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: ads-itvad-2-prod
+  labels:
+    project: ads
+  annotations:
+    argocd-image-updater.argoproj.io/git-branch: ott-prod
+    argocd-image-updater.argoproj.io/image-list: ads=harbor.fptplay.net/fplay-ads/itvad-2
+    argocd-image-updater.argoproj.io/ads.force-update: 'true'
+    argocd-image-updater.argoproj.io/ads.allow-tags: regexp:master-.*$
+    argocd-image-updater.argoproj.io/ads.pull-secret: pullsecret:argo-cd/harbor.fptplay.net
+    argocd-image-updater.argoproj.io/ads.update-strategy: latest
+    argocd-image-updater.argoproj.io/ads.helm.image-name: deployment.repository
+    argocd-image-updater.argoproj.io/ads.helm.image-tag: deployment.tag
+    argocd-image-updater.argoproj.io/write-back-method: git:secret:argo-cd/git-creds
+spec:
+  project: ads
+  destination:
+    namespace: ads
+    server: https://kubernetes.default.svc
+  source:
+    repoURL: https://git.fpt.net/fpl/he-thong/devops/cicd-template.git
+    path: manifest
+    targetRevision: ott-prod
+    helm:
+      valueFiles:
+      - values/ads/itvad-2/deployment.yml
+      - values/ads/itvad-2/healthcheck.yml
+      - values/ads/itvad-2/ingress.yml
+      - values/ads/itvad-2/cronjob.yml
+      - values/ads/itvad-2/secret.yml
+      - values/ads/itvad-2/volumes.yml
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+    - PruneLast=true
+    - CreateNamespace=true

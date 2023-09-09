@@ -1,0 +1,72 @@
+cronjob:
+  enabled: true
+  useVolumes: true
+  schedule: 0 18 * * *
+  concurrencyPolicy: Allow
+  failedJobsHistoryLimit: 1
+  successfulJobsHistoryLimit: 2
+  suspend: false
+  image:
+    repository: docker-registry.fbox.fpt.vn/api/backend-cronjobs-daily
+    tag: master-build-111981
+    pullSecrets: docker-registry.fbox.fpt.vn
+  restartPolicy: OnFailure
+  resources:
+    enabled: true
+    requests:
+      cpu: 1000m
+      memory: 1000Mi
+    limits:
+      cpu: 4000m
+      memory: 4000Mi
+  command:
+    enabled: false
+    values: []
+  args: []
+  hostAliases:
+  - ip: "172.20.2.250"
+    hostnames:
+    - "be-inhouse.fptplay.net"
+  env: []
+  enableProxy:
+    enabled: true
+    httpProxy: "http://proxy.hcm.fpt.vn:80"
+    httpsProxy: "http://proxy.hcm.fpt.vn:80"
+    noProxy: "localhost,127.0.0.1,0.0.0.0,10.0.0.0/8,cattle-system.svc,.svc,.cluster.local,172.0.0.0/8,.fptplay.net,git.fpt.net"
+
+job:
+  enabled: false
+  useVolumes: false
+  hook: PostSync
+  deleteHook: HookSucceeded
+  backoffLimit: 4
+  parallelism: 1
+  hostAliases:
+  - ip: "183.81.83.9"
+    hostnames:
+    - "ansible-awx.fptplay.net"
+  image:
+    repository: curlimages/curl
+    tag: latest
+    pullSecrets:
+  command: "/bin/sh"
+  args: 
+  - "-c"
+  - "curl google.com"
+  restartPolicy: Never
+  resources:
+    enabled: true
+    requests:
+      cpu: 1000m
+      memory: 1000Mi
+    limits:
+      cpu: 2000m
+      memory: 2000Mi
+  env:
+  - name: fd
+    value: sdfsd
+  enableProxy:
+    enabled: true
+    httpProxy: "http://proxy.hcm.fpt.vn:80"
+    httpsProxy: "http://proxy.hcm.fpt.vn:80"
+    noProxy: "localhost,127.0.0.1,0.0.0.0,10.0.0.0/8,cattle-system.svc,.svc,.cluster.local,172.0.0.0/8,*.fptplay.net,git.fpt.net"

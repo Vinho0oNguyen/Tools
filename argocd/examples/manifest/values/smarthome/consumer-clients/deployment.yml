@@ -1,0 +1,125 @@
+global:
+  appName: smarthome-consumer-clients-prod
+  serviceGroup: smarthome
+  labels: []
+  annotations: []
+  hostAliases: {}
+  env: []
+
+deployment:
+  enabled: true
+  repository: docker-registry.fbox.fpt.vn/smarthome/consumer-clients
+  tag: master-114290
+  replicaCount: 1
+  revisionHistoryLimit: 5
+  pullPolicy: IfNotPresent
+  pullSecret: docker-registry.fbox.fpt.vn
+  serviceAccount: default
+  restartPolicy: Always
+
+service:
+  enabled: false
+  type: ClusterIP
+  multiPort: false
+  ports:
+  - port: 443
+    targetPort: 443
+    nodePort: []
+    hostPort: []
+    protocol: TCP
+
+initContainer:
+- name: sysctl-init
+  image: docker-registry.fbox.fpt.vn/tools/busybox:latest
+  command:
+  - /bin/sh
+  - -c
+  - |
+    sysctl -w net.core.somaxconn=60000
+  securityContext:
+    privileged: true
+
+strategy:
+  type: RollingUpdate
+  maxUnavailable: 0
+  maxSurge: 50%
+
+resources:
+  requests:
+    cpu: 300m
+    memory: 500Mi
+  limits: 
+    cpu: 500m
+    memory: 1000Mi
+
+enableProxy:
+  enabled: false
+  httpProxy: "http://proxy.hcm.fpt.vn:80"
+  httpsProxy: "http://proxy.hcm.fpt.vn:80"
+  noProxy: "localhost, 127.0.0.1, 0.0.0.0, 10.0.0.0/8, 172.0.0.0/8, 210.245.12.111, .fptplay.net, .fptplay.vn, .fbox.fpt.vn, git.fpt.net, .svc, .svc.cluster.local"
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 40
+  targetCPU: 90
+  targetMemory: 400
+  
+  behavior:
+    enabled: false
+    scaleDown:
+      enabled: true
+      pods:
+        periodSeconds: 20
+        value: 1
+      percent:
+        periodSeconds: 20
+        value: 10
+      selectPolicy: Max
+      stabilizationWindowSeconds: 10
+
+    scaleUp:
+      enabled: true
+      pods:
+        periodSeconds: 20
+        value: 2
+      percent: 
+        periodSeconds: 20
+        value: 50
+      selectPolicy: Max
+      stabilizationWindowSeconds: 10
+
+affinity:
+  enabled: false
+  podAntiAffinity:
+    enabled: true
+    soft:
+      enabled: false 
+    weight: 100
+    key: app
+    operator: In
+    values:
+    - cache-manager
+    topologyKey: "kubernetes.io/hostname"
+
+  podAffinity:
+    enabled: false
+    soft:
+      enabled: false 
+    weight:
+    key: 
+    operator: 
+    values: []
+    topologyKey: []
+
+  nodeAffinity:
+    enabled: false
+    soft:
+      enabled: false
+    values:
+    - weight: 50
+      preference:
+        matchExpressions:
+        - key:
+          operator:
+          values:

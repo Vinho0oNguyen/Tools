@@ -1,0 +1,40 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: ads-static-file-prod
+  labels:
+    project: ads
+  annotations:
+    argocd-image-updater.argoproj.io/git-branch: ott-prod
+    argocd-image-updater.argoproj.io/image-list: myimage=docker-registry.fbox.fpt.vn/ads/ads-static-file
+    argocd-image-updater.argoproj.io/myalias.force-update: "true"
+    argocd-image-updater.argoproj.io/myimage.allow-tags: regexp:^master-.*$
+    argocd-image-updater.argoproj.io/myimage.pull-secret: secret:argo-cd/harbor-ott#credential
+    argocd-image-updater.argoproj.io/myimage.update-strategy: latest
+    argocd-image-updater.argoproj.io/write-back-method: ' git:secret:argo-cd/git-creds'
+    argocd-image-updater.argoproj.io/myimage.helm.image-name: deployment.repository
+    argocd-image-updater.argoproj.io/myimage.helm.image-tag: deployment.tag
+spec:
+  project: ads
+  destination:
+    namespace: ads
+    server: https://kubernetes.default.svc
+  source:
+    repoURL: https://git.fpt.net/fpl/he-thong/devops/cicd-template.git
+    path: manifest
+    targetRevision: ott-prod
+    helm:
+      valueFiles:
+      - values/ads/ads-static-file/deployment.yml
+      - values/ads/ads-static-file/healthcheck.yml
+      - values/ads/ads-static-file/ingress.yml
+      - values/ads/ads-static-file/cronjob.yml
+      - values/ads/ads-static-file/secret.yml
+      - values/ads/ads-static-file/volumes.yml
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+    - PruneLast=true
+    - CreateNamespace=true

@@ -1,0 +1,40 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: card-mobile-webview-prod
+  labels:
+    project: web
+  annotations:
+    argocd-image-updater.argoproj.io/git-branch: ott-prod
+    argocd-image-updater.argoproj.io/image-list: web=docker-registry.fbox.fpt.vn/web/web-shoppertainment
+    argocd-image-updater.argoproj.io/web.force-update: "true"
+    argocd-image-updater.argoproj.io/web.allow-tags: regexp:^master-.*$
+    argocd-image-updater.argoproj.io/web.pull-secret: pullsecret:argo-cd/docker-registry.fbox.fpt.vn
+    argocd-image-updater.argoproj.io/web.update-strategy: latest
+    argocd-image-updater.argoproj.io/write-back-method: git:secret:argo-cd/git.fpt.net
+    argocd-image-updater.argoproj.io/web.helm.image-name: deployment.repository
+    argocd-image-updater.argoproj.io/web.helm.image-tag: deployment.tag
+    notifications.argoproj.io/subscribe.out-of-sync.telegram: "-855824262"
+    notifications.argoproj.io/subscribe.on-sync-succeeded.telegram: "-855824262"
+spec:
+  destination:
+    namespace: web
+    server: https://kubernetes.default.svc
+  project: web
+  source:
+    repoURL: https://git.fpt.net/fpl/he-thong/devops/cicd-template.git
+    path: manifest
+    targetRevision: ott-prod
+    helm:
+      valueFiles:
+      - values/web/card-mobile-webview/deployment.yaml
+      - values/web/card-mobile-webview/healthcheck.yaml
+      - values/web/card-mobile-webview/ingress.yaml
+      - values/web/card-mobile-webview/cronjob.yaml
+      - values/web/card-mobile-webview/secret.yaml
+      - values/web/card-mobile-webview/volumes.yaml
+  syncPolicy:
+    # automated: {}
+    syncOptions:
+    - PruneLast=true
+    - CreateNamespace=true

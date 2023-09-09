@@ -1,0 +1,40 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: smarthome-consumer-clients-prod
+  labels:
+    project: smarthome
+  annotations:
+    argocd-image-updater.argoproj.io/git-branch: ott-prod
+    argocd-image-updater.argoproj.io/image-list: smarthome=docker-registry.fbox.fpt.vn/smarthome/consumer-clients
+    argocd-image-updater.argoproj.io/smarthome.force-update: 'true'
+    argocd-image-updater.argoproj.io/smarthome.allow-tags: regexp:^master-.*$
+    argocd-image-updater.argoproj.io/smarthome.pull-secret: pullsecret:argo-cd/docker-registry.fbox.fpt.vn
+    argocd-image-updater.argoproj.io/smarthome.update-strategy: latest
+    argocd-image-updater.argoproj.io/smarthome.helm.image-name: deployment.repository
+    argocd-image-updater.argoproj.io/smarthome.helm.image-tag: deployment.tag
+    argocd-image-updater.argoproj.io/write-back-method: git:secret:argo-cd/git.fpt.net
+spec:
+  project: smarthome
+  destination:
+    namespace: smarthome
+    server: https://kubernetes.default.svc
+  source:
+    repoURL: https://git.fpt.net/fpl/he-thong/devops/cicd-template.git
+    path: manifest
+    targetRevision: ott-prod
+    helm:
+      valueFiles:
+      - values/smarthome/consumer-clients/deployment.yml
+      - values/smarthome/consumer-clients/healthcheck.yml
+      - values/smarthome/consumer-clients/ingress.yml
+      - values/smarthome/consumer-clients/cronjob.yml
+      - values/smarthome/consumer-clients/secret.yml
+      - values/smarthome/consumer-clients/volumes.yml
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+    - PruneLast=true
+    - CreateNamespace=true

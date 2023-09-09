@@ -1,0 +1,70 @@
+cronjob:
+  enabled: false
+  useVolumes: false
+  schedule: 0 22 * * *
+  concurrencyPolicy: Allow
+  failedJobsHistoryLimit: 1
+  successfulJobsHistoryLimit: 2
+  suspend: false
+  image:
+    repository: harbor.fptplay.net/fplay-api/debit-t90
+    tag: debit_t90-build-75789
+    pullSecrets: harbor.fptplay.net
+  restartPolicy: OnFailure
+  resources:
+    enabled: false
+    requests:
+      cpu: 1000m
+      memory: 1000Mi
+    limits:
+      cpu: 2000m
+      memory: 2000Mi
+  command: '/bin/sh'
+  args:
+  - "-c"
+  - "curl"
+  env:
+  - name: fd
+    value: sdfsd
+  enableProxy:
+    enabled: false
+    httpProxy: "http://proxy.hcm.fpt.vn:80"
+    httpsProxy: "http://proxy.hcm.fpt.vn:80"
+    noProxy: "localhost,127.0.0.1,0.0.0.0,10.0.0.0/8,cattle-system.svc,.svc,.cluster.local,172.0.0.0/8,*.fptplay.net,git.fpt.net"
+
+job:
+  enabled: false
+  useVolumes: false
+  hook: PostSync
+  deleteHook: HookSucceeded
+  backoffLimit: 4
+  parallelism: 1
+  hostAliases:
+  - ip: "183.81.83.9"
+    hostnames:
+    - "ansible-awx.fptplay.net"
+  image:
+    repository: curlimages/curl
+    tag: latest
+    pullSecrets:
+  command: "/bin/sh"
+  args: 
+  - "-c"
+  - "curl google.com"
+  restartPolicy: Never
+  resources:
+    enabled: false
+    requests:
+      cpu: 1000m
+      memory: 1000Mi
+    limits:
+      cpu: 2000m
+      memory: 2000Mi
+  env:
+  - name: fd
+    value: sdfsd
+  enableProxy:
+    enabled: false
+    httpProxy: "http://proxy.hcm.fpt.vn:80"
+    httpsProxy: "http://proxy.hcm.fpt.vn:80"
+    noProxy: "localhost,127.0.0.1,0.0.0.0,10.0.0.0/8,cattle-system.svc,.svc,.cluster.local,172.0.0.0/8,*.fptplay.net,git.fpt.net"

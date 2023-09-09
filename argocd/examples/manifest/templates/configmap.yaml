@@ -1,0 +1,12 @@
+{{- $appName := .Values.global.appName }}
+{{- if and .Values.customCM.enabled ( not .Values.customCM.cmName ) }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ $appName }}
+  labels: {{- include "common.labels" . | nindent 4 }}
+data:
+  {{- if .Values.customCM.values -}}
+  {{ .Values.customCM.values | toYaml | nindent 2 }}
+  {{- end }}
+{{- end }}

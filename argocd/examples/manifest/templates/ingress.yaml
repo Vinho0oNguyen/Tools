@@ -1,0 +1,60 @@
+{{- if .Values.ingress.enabled }}
+{{- $pathType := .Values.ingress.pathType }}
+{{- $pathSize := len .Values.ingress.paths }}
+{{- $defaultPort := ( index $.Values.service.ports 0 ).port }}
+{{- $defaultPath := ( index $.Values.ingress.paths 0 ).path }}
+{{- $appName := .Values.global.appName }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ $appName }}
+  labels: {{- include "common.labels" . | nindent 4 }}
+  {{- if .Values.ingress.annotations }}
+  annotations:
+    {{- .Values.ingress.annotations | toYaml | nindent 4 }}
+  {{- end }}
+spec:
+  ingressClassName: {{ .Values.ingress.ingressClassName }}
+  {{- if .Values.ingress.tls.enabled }}
+  tls:
+  - hosts:
+    - {{ .Values.ingress.hosts }}
+    secretName: {{ .Values.ingress.tls.secretName }}
+  {{- end }}
+  rules:
+  - host: {{ .Values.ingress.hosts }}
+    http:
+      paths:
+      {{- if and ( eq .Values.service.multiPort true ) ( eq .Values.ingress.multiPath true ) ( gt $pathSize 1 ) }}
+      {{- range $paths := .Values.ingress.paths }}
+      {{- if not .servicePort }}
+      {{- fail "Value servicePort for each path is not defined" }}
+      {{- end }}
+      - path: {{ $paths.path }}
+        pathType: {{ $pathType }}
+        backend:
+          service:
+            name: {{ $appName }}
+            port:
+              number: {{ $paths.servicePort }}
+      {{- end }}
+      {{- else if and ( eq .Values.service.multiPort false ) ( eq .Values.ingress.multiPath true ) ( gt $pathSize 1 ) }}
+      {{- range $paths := .Values.ingress.paths }}
+      - path: {{ $paths.path }}
+        pathType: {{ $pathType }}
+        backend:
+          service:
+            name: {{ $appName }}
+            port:
+              number: {{ $defaultPort }}
+      {{- end }}
+      {{- else }}
+      - path: {{ $defaultPath }}
+        pathType: {{ $pathType }}
+        backend:
+          service:
+            name: {{ $appName }}
+            port:
+              number: {{ $defaultPort }}
+      {{- end }}
+{{- end }}
