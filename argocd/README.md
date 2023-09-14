@@ -117,7 +117,7 @@ kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/v2
 ```
 kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj-labs/argocd-image-updater/stable/manifests/install.yaml
 ```
-> **_NOTE:_**  Thêm config để interval check repo: **--interval <time>** trong deployment: **spec.template.spec.containers.command**.
+> **_NOTE:_**  Thêm config để interval check repo: **--interval 10** trong deployment: **spec.template.spec.containers.command**.
 ## Manifest Structure
 ### Applications folder
 #### Chứa resource Application của argocd dùng để quản lý và triển khai app.
