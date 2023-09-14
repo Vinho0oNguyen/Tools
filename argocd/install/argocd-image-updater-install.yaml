@@ -104,6 +104,8 @@ spec:
       - command:
         - /usr/local/bin/argocd-image-updater
         - run
+        - --interval
+        - 20s
         env:
         - name: APPLICATIONS_API
           valueFrom:
@@ -165,7 +167,7 @@ spec:
               key: kube.events
               name: argocd-image-updater-config
               optional: true
-        image: quay.io/argoprojlabs/argocd-image-updater:v0.12.0
+        image: quay.io/argoprojlabs/argocd-image-updater:v0.12.2
         imagePullPolicy: Always
         livenessProbe:
           httpGet:
