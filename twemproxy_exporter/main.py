@@ -5,10 +5,14 @@ import http.client
 import json
 from flask import Flask, Response
 import re
+import os
+import ast
+from dotenv import load_dotenv
 
 app = Flask(__name__)
+load_dotenv()
 
-env_platform = "k8s"
+env_platform = os.getenv("ENV_PLATFORM")
 
 ###################
 # CONST VARIABLES #
@@ -34,7 +38,7 @@ if env_platform == "k8s":
 
     namespace = "default"
     label_selector = "app=twemproxy"
-    
+
     platform = "kubernete"
 ########################
 # END KUBENETE CONFIFG #
@@ -120,7 +124,6 @@ def get_metrics_physical(host, port, url):
         if response.status == 200:
             data = response.read()
             json_data = json.loads(data.decode("utf-8"))
-
             print(json.dumps(json_data, indent=2))
         else:
             print(f"HTTP Error: {response.status} {response.reason}")
@@ -246,13 +249,12 @@ def expose_redis_metrics(json_data):
 @app.route('/metrics', methods=['GET'])
 def get_metrics():
     if env_platform == "physical":
-        server = [
-            {"host": "172.24.245.33", "port": 22227, "url": "172.24.245.33"},
-            {"host": "172.24.245.33", "port": 22223, "url": "172.24.245.33"},
-        ]
+        server_str = os.getenv("SERVER_PHYSICAL")
+        server = ast.literal_eval(server_str)
     else:
         server = []
-        port = [22223, 22224]
+        port_str = os.getenv("PORT_K8S")
+        port = ast.literal_eval(port_str)
         pod_list = api_instance.list_namespaced_pod(namespace, label_selector=label_selector)
         for p in port:
             for pod in pod_list.items:
