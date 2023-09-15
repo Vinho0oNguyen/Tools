@@ -140,7 +140,7 @@ def fetch_common_metrics(json_data):
     for key, values in json_data.items():
         if key in twemproxy_name:
             pool_name = key
-            client_connections = json_data.get('client_connections', 0)
+            client_connections = values.get('client_connections', 0)
             client_eof = values.get('client_eof', 0)
             client_err = values.get('client_err', 0)
             server_ejects = values.get('server_ejects', 0)
@@ -172,7 +172,7 @@ def expose_common_metrics(json_data):
     uptime_metric.labels(**uptime_label).set(int(uptime))
     total_connection_metric.labels(**total_connection_label).set(int(total_connection))
     curr_connection_metric.labels(**curr_connection_label).set(int(curr_connection))
-    clients_connections_metric.labels(**client_connections_label).set(int(client_connections))
+    client_connections_metric.labels(**client_connections_label).set(int(client_connections))
     client_eof_metric.labels(**client_eof_label).set(int(client_eof))
     client_err_metric.labels(**client_err_label).set(int(client_err))
     server_ejects_metric.labels(**server_ejects_label).set(int(server_ejects))
