@@ -8,6 +8,8 @@ import re
 
 app = Flask(__name__)
 
+env_platform = "physical"
+
 ###################
 # CONST VARIABLES #
 ###################
@@ -24,7 +26,7 @@ platform = "physical"
 # KUBENETE CONFIFG #
 ####################
 # Load Kubernetes configuration from default location
-if platform == "k8s":
+if env_platform == "k8s":
     config.load_kube_config(config_file="./cluster-ott-dev.yaml")
 
     # Create a Kubernetes API client
@@ -75,29 +77,29 @@ out_queue_bytes = ""
 # DEFINE METRICS VARIABLES FOR PROMETHEUS #
 ###########################################
 # COMMON VARIABLES
-uptime_metric = Gauge('twemproxy_uptime', 'Nutcracker Uptime', labelnames=['pod_name', 'pool'])
-total_connection_metric = Gauge('twemproxy_total_connections', 'Total Connections', labelnames=['pod_name', 'pool'])
-curr_connection_metric = Gauge('twemproxy_current_connections', 'Current Connections', labelnames=['pod_name', 'pool'])
-client_eof_metric = Gauge('twemproxy_client_eof', f'{pool_name} Client EOF', labelnames=['pod_name', 'pool'])
-client_err_metric = Gauge('twemproxy_client_err', f'{pool_name} Client Errors', labelnames=['pod_name', 'pool'])
-server_ejects_metric = Gauge('twemproxy_server_ejects', f'{pool_name} Server Ejects', labelnames=['pod_name', 'pool'])
-forward_error_metric = Gauge('twemproxy_forward_error', f'{pool_name} Server Ejects', labelnames=['pod_name', 'pool'])
-fragments_metric = Gauge('twemproxy_fragments', f'{pool_name} Fragments metrics', labelnames=['pod_name', 'pool'])
+uptime_metric = Gauge('twemproxy_uptime', 'Nutcracker Uptime', labelnames=['platform', 'pod_name', 'pool'])
+total_connection_metric = Gauge('twemproxy_total_connections', 'Total Connections', labelnames=['platform', 'pod_name', 'pool'])
+curr_connection_metric = Gauge('twemproxy_current_connections', 'Current Connections', labelnames=['platform', 'pod_name', 'pool'])
+client_eof_metric = Gauge('twemproxy_client_eof', f'{pool_name} Client EOF', labelnames=['platform', 'pod_name', 'pool'])
+client_err_metric = Gauge('twemproxy_client_err', f'{pool_name} Client Errors', labelnames=['platform', 'pod_name', 'pool'])
+server_ejects_metric = Gauge('twemproxy_server_ejects', f'{pool_name} Server Ejects', labelnames=['platform', 'pod_name', 'pool'])
+forward_error_metric = Gauge('twemproxy_forward_error', f'{pool_name} Server Ejects', labelnames=['platform', 'pod_name', 'pool'])
+fragments_metric = Gauge('twemproxy_fragments', f'{pool_name} Fragments metrics', labelnames=['platform', 'pod_name', 'pool'])
 
 # REDIS SERVER VARIABLES
-server_eof_metric = Gauge('twemproxy_server_eof', 'Redis Server EOF', labelnames=['pod_name', 'pool', "redis"])
-server_err_metric = Gauge('twemproxy_server_err', 'Redis Server ERR', labelnames=['pod_name', 'pool', "redis"])
-server_timedout_metric = Gauge('twemproxy_server_timedout', 'Timeout to Redis', labelnames=['pod_name', 'pool', "redis"])
-server_connections_metric = Gauge('twemproxy_server_connections', 'Connections to Redis', labelnames=['pod_name', 'pool', "redis"])
-server_ejected_at_metric = Gauge('twemproxy_server_ejected_at', 'Ejected', labelnames=['pod_name', 'pool', "redis"])
-requests_metric = Gauge('twemproxy_requests', 'Requests to Redis', labelnames=['pod_name', 'pool', "redis"])
-request_bytes_metric = Gauge('twemproxy_request_bytes', 'Request bytes to Redis', labelnames=['pod_name', 'pool', "redis"])
-responses_metric = Gauge('twemproxy_responses', 'Responses to Redis', labelnames=['pod_name', 'pool', "redis"])
-response_bytes_metric = Gauge('twemproxy_response_bytes', 'Responses bytes to Redis', labelnames=['pod_name', 'pool', "redis"])
-in_queue_metric = Gauge('twemproxy_in_queue', 'In queue Redis', labelnames=['pod_name', 'pool', "redis"])
-in_queue_bytes_metric = Gauge('twemproxy_in_queue_bytes', 'In queue bytes Redis', labelnames=['pod_name', 'pool', "redis"])
-out_queue_metric = Gauge('twemproxy_out_queue', 'Out qeue Redis', labelnames=['pod_name', 'pool', "redis"])
-out_queue_bytes_metric = Gauge('twemproxy_out_queue_bytes', 'Out qeue bytes Redis', labelnames=['pod_name', 'pool', "redis"])
+server_eof_metric = Gauge('twemproxy_server_eof', 'Redis Server EOF', labelnames=['platform', 'pod_name', 'pool', "redis"])
+server_err_metric = Gauge('twemproxy_server_err', 'Redis Server ERR', labelnames=['platform', 'pod_name', 'pool', "redis"])
+server_timedout_metric = Gauge('twemproxy_server_timedout', 'Timeout to Redis', labelnames=['platform', 'pod_name', 'pool', "redis"])
+server_connections_metric = Gauge('twemproxy_server_connections', 'Connections to Redis', labelnames=['platform', 'pod_name', 'pool', "redis"])
+server_ejected_at_metric = Gauge('twemproxy_server_ejected_at', 'Ejected', labelnames=['platform', 'pod_name', 'pool', "redis"])
+requests_metric = Gauge('twemproxy_requests', 'Requests to Redis', labelnames=['platform', 'pod_name', 'pool', "redis"])
+request_bytes_metric = Gauge('twemproxy_request_bytes', 'Request bytes to Redis', labelnames=['platform', 'pod_name', 'pool', "redis"])
+responses_metric = Gauge('twemproxy_responses', 'Responses to Redis', labelnames=['platform', 'pod_name', 'pool', "redis"])
+response_bytes_metric = Gauge('twemproxy_response_bytes', 'Responses bytes to Redis', labelnames=['platform', 'pod_name', 'pool', "redis"])
+in_queue_metric = Gauge('twemproxy_in_queue', 'In queue Redis', labelnames=['platform', 'pod_name', 'pool', "redis"])
+in_queue_bytes_metric = Gauge('twemproxy_in_queue_bytes', 'In queue bytes Redis', labelnames=['platform', 'pod_name', 'pool', "redis"])
+out_queue_metric = Gauge('twemproxy_out_queue', 'Out qeue Redis', labelnames=['platform', 'pod_name', 'pool', "redis"])
+out_queue_bytes_metric = Gauge('twemproxy_out_queue_bytes', 'Out qeue bytes Redis', labelnames=['platform', 'pod_name', 'pool', "redis"])
 ###############################################
 # END DEFINE METRICS VARIABLES FOR PROMETHEUS #
 ###############################################
@@ -153,14 +155,14 @@ def expose_common_metrics(json_data):
     pod_name, uptime, total_connection, curr_connection, pool_name, client_eof, client_err, server_ejects, forward_error, fragments = fetch_common_metrics(json_data)
 
     ## set label
-    uptime_label = {'pod_name': pod_name, 'pool': pool_name}
-    total_connection_label = {'pod_name': pod_name, 'pool': pool_name}
-    curr_connection_label = {'pod_name': pod_name, 'pool': pool_name}
-    client_eof_label = {'pod_name': pod_name, 'pool': pool_name}
-    client_err_label = {'pod_name': pod_name, 'pool': pool_name}
-    server_ejects_label = {'pod_name': pod_name, 'pool': pool_name}
-    forward_error_label = {'pod_name': pod_name, 'pool': pool_name}
-    fragments_label = {'pod_name': pod_name, 'pool': pool_name}
+    uptime_label = {'platform': platform, 'pod_name': pod_name, 'pool': pool_name}
+    total_connection_label = {'platform': platform, 'pod_name': pod_name, 'pool': pool_name}
+    curr_connection_label = {'platform': platform, 'pod_name': pod_name, 'pool': pool_name}
+    client_eof_label = {'platform': platform, 'pod_name': pod_name, 'pool': pool_name}
+    client_err_label = {'platform': platform, 'pod_name': pod_name, 'pool': pool_name}
+    server_ejects_label = {'platform': platform, 'pod_name': pod_name, 'pool': pool_name}
+    forward_error_label = {'platform': platform, 'pod_name': pod_name, 'pool': pool_name}
+    fragments_label = {'platform': platform, 'pod_name': pod_name, 'pool': pool_name}
 
     ## expose metrics
     uptime_metric.labels(**uptime_label).set(int(uptime))
@@ -201,19 +203,19 @@ def expose_redis_metrics(json_data):
             redis_ip, server_eof, server_err, server_timedout, server_connections, server_ejected_at, requests, request_bytes, responses, response_bytes, in_queue, in_queue_bytes, out_queue, out_queue_bytes = fetch_redis_metrics(redis_server_data, redis_server)
 
             ## set label
-            server_eof_label = {'pod_name': pod_name, 'pool': pool_name, 'redis': redis_ip}
-            server_err_label = {'pod_name': pod_name, 'pool': pool_name, 'redis': redis_ip}
-            server_timedout_label = {'pod_name': pod_name, 'pool': pool_name, 'redis': redis_ip}
-            server_connections_label = {'pod_name': pod_name, 'pool': pool_name, 'redis': redis_ip}
-            server_ejected_at_label = {'pod_name': pod_name, 'pool': pool_name, 'redis': redis_ip}
-            requests_label = {'pod_name': pod_name, 'pool': pool_name, 'redis': redis_ip}
-            request_bytes_label = {'pod_name': pod_name, 'pool': pool_name, 'redis': redis_ip}
-            responses_label = {'pod_name': pod_name, 'pool': pool_name, 'redis': redis_ip}
-            response_bytes_label = {'pod_name': pod_name, 'pool': pool_name, 'redis': redis_ip}
-            in_queue_label = {'pod_name': pod_name, 'pool': pool_name, 'redis': redis_ip}
-            in_queue_bytes_label = {'pod_name': pod_name, 'pool': pool_name, 'redis': redis_ip}
-            out_queue_label = {'pod_name': pod_name, 'pool': pool_name, 'redis': redis_ip}
-            out_queue_bytes_label = {'pod_name': pod_name, 'pool': pool_name, 'redis': redis_ip}
+            server_eof_label = {'platform': platform,'pod_name': pod_name, 'pool': pool_name, 'redis': redis_ip}
+            server_err_label = {'platform': platform,'pod_name': pod_name, 'pool': pool_name, 'redis': redis_ip}
+            server_timedout_label = {'platform': platform,'pod_name': pod_name, 'pool': pool_name, 'redis': redis_ip}
+            server_connections_label = {'platform': platform,'pod_name': pod_name, 'pool': pool_name, 'redis': redis_ip}
+            server_ejected_at_label = {'platform': platform,'pod_name': pod_name, 'pool': pool_name, 'redis': redis_ip}
+            requests_label = {'platform': platform,'pod_name': pod_name, 'pool': pool_name, 'redis': redis_ip}
+            request_bytes_label = {'platform': platform,'pod_name': pod_name, 'pool': pool_name, 'redis': redis_ip}
+            responses_label = {'platform': platform,'pod_name': pod_name, 'pool': pool_name, 'redis': redis_ip}
+            response_bytes_label = {'platform': platform,'pod_name': pod_name, 'pool': pool_name, 'redis': redis_ip}
+            in_queue_label = {'platform': platform,'pod_name': pod_name, 'pool': pool_name, 'redis': redis_ip}
+            in_queue_bytes_label = {'platform': platform,'pod_name': pod_name, 'pool': pool_name, 'redis': redis_ip}
+            out_queue_label = {'platform': platform,'pod_name': pod_name, 'pool': pool_name, 'redis': redis_ip}
+            out_queue_bytes_label = {'platform': platform,'pod_name': pod_name, 'pool': pool_name, 'redis': redis_ip}
 
             ## expose metrics
             server_eof_metric.labels(**server_eof_label).set(int(server_eof))
