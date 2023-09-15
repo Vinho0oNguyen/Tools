@@ -8,7 +8,7 @@ import re
 
 app = Flask(__name__)
 
-env_platform = "physical"
+env_platform = "k8s"
 
 ###################
 # CONST VARIABLES #
@@ -33,7 +33,7 @@ if env_platform == "k8s":
     api_instance = client.CoreV1Api()
 
     namespace = "default"
-    label_selector = "app=reviews"
+    label_selector = "app=twemproxy"
     
     platform = "kubernete"
 ########################
@@ -244,11 +244,22 @@ def expose_redis_metrics(json_data):
 # REST API #
 ############
 @app.route('/metrics', methods=['GET'])
-def get_metrics2():
-    server = [
-        {"host": "172.24.245.33", "port": 22227, "url": "172.24.245.33"},
-        {"host": "172.24.245.33", "port": 22223, "url": "172.24.245.33"},
-    ]
+def get_metrics():
+    if env_platform == "physical":
+        server = [
+            {"host": "172.24.245.33", "port": 22227, "url": "172.24.245.33"},
+            {"host": "172.24.245.33", "port": 22223, "url": "172.24.245.33"},
+        ]
+    else:
+        server = []
+        port = [22223, 22224]
+        pod_list = api_instance.list_namespaced_pod(namespace, label_selector=label_selector)
+        for p in port:
+            for pod in pod_list.items:
+                pod_ip = pod.status.pod_ip
+                server.append({"host": pod_ip, "port": p, "url": pod_ip})
+                
+
     with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
         json_arrays = list(executor.map(lambda server_data: get_metrics_physical(**server_data), server))
     json_array = [item for sublist in json_arrays for item in sublist]
