@@ -49,6 +49,7 @@ uptime = ""
 total_connection = ""
 curr_connection = ""
 pool_name = ""
+client_connections = ""
 client_eof = ""
 client_err = ""
 server_ejects = ""
@@ -80,6 +81,7 @@ out_queue_bytes = ""
 uptime_metric = Gauge('twemproxy_uptime', 'Nutcracker Uptime', labelnames=['platform', 'pod_name', 'pool'])
 total_connection_metric = Gauge('twemproxy_total_connections', 'Total Connections', labelnames=['platform', 'pod_name', 'pool'])
 curr_connection_metric = Gauge('twemproxy_current_connections', 'Current Connections', labelnames=['platform', 'pod_name', 'pool'])
+client_connections_metric = Gauge('twemproxy_client_connections', 'Client Connections', labelnames=['platform', 'pod_name', 'pool'])
 client_eof_metric = Gauge('twemproxy_client_eof', f'{pool_name} Client EOF', labelnames=['platform', 'pod_name', 'pool'])
 client_err_metric = Gauge('twemproxy_client_err', f'{pool_name} Client Errors', labelnames=['platform', 'pod_name', 'pool'])
 server_ejects_metric = Gauge('twemproxy_server_ejects', f'{pool_name} Server Ejects', labelnames=['platform', 'pod_name', 'pool'])
@@ -138,26 +140,28 @@ def fetch_common_metrics(json_data):
     for key, values in json_data.items():
         if key in twemproxy_name:
             pool_name = key
+            client_connections = json_data.get('client_connections', 0)
+            client_eof = values.get('client_eof', 0)
+            client_err = values.get('client_err', 0)
+            server_ejects = values.get('server_ejects', 0)
+            forward_error = values.get('forward_error', 0)
+            fragments = values.get('fragments', 0)
     pod_name = json_data.get('source', 0)
     uptime = json_data.get('uptime', 0)
     total_connection = json_data.get('total_connections', 0)
     curr_connection = json_data.get('curr_connections', 0)
-    client_eof = json_data.get('client_eof', 0)
-    client_err = json_data.get('client_err', 0)
-    server_ejects = json_data.get('server_ejects', 0)
-    forward_error = json_data.get('forward_error', 0)
-    fragments = json_data.get('fragments', 0)
 
-    return pod_name, uptime, total_connection, curr_connection, pool_name, client_eof, client_err, server_ejects, forward_error, fragments
+    return pod_name, uptime, total_connection, curr_connection, pool_name, client_connections, client_eof, client_err, server_ejects, forward_error, fragments
 
 def expose_common_metrics(json_data):
     ## get data
-    pod_name, uptime, total_connection, curr_connection, pool_name, client_eof, client_err, server_ejects, forward_error, fragments = fetch_common_metrics(json_data)
+    pod_name, uptime, total_connection, curr_connection, pool_name, client_connections, client_eof, client_err, server_ejects, forward_error, fragments = fetch_common_metrics(json_data)
 
     ## set label
     uptime_label = {'platform': platform, 'pod_name': pod_name, 'pool': pool_name}
     total_connection_label = {'platform': platform, 'pod_name': pod_name, 'pool': pool_name}
     curr_connection_label = {'platform': platform, 'pod_name': pod_name, 'pool': pool_name}
+    client_connections_label = {'platform': platform, 'pod_name': pod_name, 'pool': pool_name}
     client_eof_label = {'platform': platform, 'pod_name': pod_name, 'pool': pool_name}
     client_err_label = {'platform': platform, 'pod_name': pod_name, 'pool': pool_name}
     server_ejects_label = {'platform': platform, 'pod_name': pod_name, 'pool': pool_name}
@@ -168,6 +172,7 @@ def expose_common_metrics(json_data):
     uptime_metric.labels(**uptime_label).set(int(uptime))
     total_connection_metric.labels(**total_connection_label).set(int(total_connection))
     curr_connection_metric.labels(**curr_connection_label).set(int(curr_connection))
+    clients_connections_metric.labels(**client_connections_label).set(int(client_connections))
     client_eof_metric.labels(**client_eof_label).set(int(client_eof))
     client_err_metric.labels(**client_err_label).set(int(client_err))
     server_ejects_metric.labels(**server_ejects_label).set(int(server_ejects))
