@@ -1,32 +1,20 @@
 apiVersion: v1
 kind: Config
 clusters:
-- name: "dev"
+- name: "staging"
   cluster:
-    server: "https://rancher.my.org/k8s/clusters/c-m-jh8v5zlp"
-    certificate-authority-data: "LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUJ2VENDQ\
-      VdPZ0F3SUJBZ0lCQURBS0JnZ3Foa2pPUFFRREFqQkdNUnd3R2dZRFZRUUtFeE5rZVc1aGJXbGoKY\
-      kdsemRHVnVaWEl0YjNKbk1TWXdKQVlEVlFRRERCMWtlVzVoYldsamJHbHpkR1Z1WlhJdFkyRkFNV\
-      Fk1TWpnMQpNRE14T1RBZUZ3MHlNekE0TWpRd05ERXhOVGxhRncwek16QTRNakV3TkRFeE5UbGFNR\
-      Vl4SERBYUJnTlZCQW9UCkUyUjVibUZ0YVdOc2FYTjBaVzVsY2kxdmNtY3hKakFrQmdOVkJBTU1IV\
-      1I1Ym1GdGFXTnNhWE4wWlc1bGNpMWoKWVVBeE5qa3lPRFV3TXpFNU1Ga3dFd1lIS29aSXpqMENBU\
-      VlJS29aSXpqMERBUWNEUWdBRXdvL3BPSU5WbUdMVgptamg5VlhKbGRDU2EzVlpQVk5RQS9WVGxNO\
-      ThEcTNBTWJxNFJvRTRwL1J0QjhJc05LRzB2M2FicS9GaTcwL3JhCm53NE13eUgrdzZOQ01FQXdEZ\
-      1lEVlIwUEFRSC9CQVFEQWdLa01BOEdBMVVkRXdFQi93UUZNQU1CQWY4d0hRWUQKVlIwT0JCWUVGS\
-      mZOVHJnakxZd0RVL1hqeHRMRXZ4UWw4WlJtTUFvR0NDcUdTTTQ5QkFNQ0EwZ0FNRVVDSUFVUwpZZ\
-      U1oWnozNDFSeWU3TkE0NUcwS2pWQkMzaXQ0eHBaN0NPajlneDQ1QWlFQTFiZ01BMDBkNFV6MmJlV\
-      k11Z3lICjhNY0VCaE9XRi95YjViTTZ3Y21acC9BPQotLS0tLUVORCBDRVJUSUZJQ0FURS0tLS0t"
+    server: "https://rancher-staging.fptplay.net/k8s/clusters/local"
 
 users:
-- name: "dev"
+- name: "staging"
   user:
-    token: "kubeconfig-user-hbphvpgnsw:dz6b89mqxwqp4bf29gm727njfdlw9zg7nwhtvmfn2hnl94tlgb8hkn"
+    token: "kubeconfig-user-vzhhdchkqc:jcp57k8z2xl2lwttnzfrlzlv5mnbjcn8fk8skgm2rgmrcjfdt8s47p"
 
 
 contexts:
-- name: "dev"
+- name: "staging"
   context:
-    user: "dev"
-    cluster: "dev"
+    user: "staging"
+    cluster: "staging"
 
-current-context: "dev"
+current-context: "staging"

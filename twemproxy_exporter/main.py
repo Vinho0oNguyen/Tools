@@ -17,7 +17,8 @@ env_platform = os.getenv("ENV_PLATFORM")
 ###################
 # CONST VARIABLES #
 ###################
-twemproxy_name = ["playapi", "metadata"]
+twemproxy_name_str = os.getenv("TWEMPROXY_NAME")
+twemproxy_name = ast.literal_eval(twemproxy_name_str)
 pattern_ip = r'\b(?:[0-9]{1,3}\.){3}[0-9]{1,3}\b' # example: 172.24.245.4
 pattern_name_redis = "server\d+"
 json_array = []
@@ -36,8 +37,8 @@ if env_platform == "k8s":
     # Create a Kubernetes API client
     api_instance = client.CoreV1Api()
 
-    namespace = "default"
-    label_selector = "app=twemproxy"
+    namespace = os.getenv("NAMESPACE")
+    label_selector = os.getenv("LABEL")
 
     platform = "kubernete"
 ########################
