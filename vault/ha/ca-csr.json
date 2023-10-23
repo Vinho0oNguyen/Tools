@@ -1,0 +1,16 @@
+{
+  "CN": "vault-hni",
+  "key": {
+    "algo": "rsa",
+    "size": 2048
+  },
+  "names": [
+    {
+      "C": "ID",
+      "L": "Vietnam",
+      "O": "Kubernetes",
+      "OU": "VAULT-CA",
+      "ST": "West Java"
+    }
+  ]
+}
