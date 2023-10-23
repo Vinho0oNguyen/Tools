@@ -1,0 +1,27 @@
+{
+  "CN": "vault-hni",
+  "hosts": [
+    "localhost",
+    "127.0.0.1",
+    "vault",
+    "vault-0.vault-internal",
+    "vault-1.vault-internal",
+    "vault-2.vault-internal",
+    "vault-3.vault-internal",
+    "vault-4.vault-internal",
+    "vault-5.vault-internal"
+  ],
+  "key": {
+    "algo": "rsa",
+    "size": 2048
+  },
+  "names": [
+    {
+      "C": "ID",
+      "L": "Vietnam",
+      "O": "Kubernetes",
+      "OU": "VAULT",
+      "ST": "West Java"
+    }
+  ]
+}
