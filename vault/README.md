@@ -78,8 +78,6 @@ helm upgrade --install vault hashicorp/vault -f values.yaml -n vault --create-na
 ```
 ## 4. Generate TLS
 ```
-helm upgrade --install vault hashicorp/vault -f values.yaml -n vault --create-namespace
-```
 cfssl gencert -initca ca-csr.json | cfssljson -bare ca
 cfssl gencert -ca=ca.pem -ca-key=ca-key.pem -config=ca-config.json -profile=vault-hni vault-csr.json | cfssljson -bare vault
 ```
