@@ -176,6 +176,9 @@ server:
     VAULT_CACERT: /vault/userconfig/vault-ha-tls/vault.pem
     VAULT_TLSCERT: /vault/userconfig/vault-ha-tls/vault.pem
     VAULT_TLSKEY: /vault/userconfig/vault-ha-tls/vault-key.pem
+    VAULT_ADDR: https://127.0.0.1:8200
+    VAULT_API_ADDR: https://$(POD_IP):8200
+    VAULT_CLUSTER_ADDR: https://$(HOSTNAME).vault-internal:8201
 
   extraSecretEnvironmentVars: []
   extraVolumes: []
