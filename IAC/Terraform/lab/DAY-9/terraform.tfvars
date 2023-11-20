@@ -1,5 +1,5 @@
 aws_access_key = "input"
-aws_secret_key = "inout"
+aws_secret_key = "inut"
 key_name = "lab"
 private_key_path = "./private-key.pem"
 region = "ap-southeast-1"

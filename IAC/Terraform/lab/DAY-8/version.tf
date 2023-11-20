@@ -1,4 +1,11 @@
 terraform {
+    cloud {
+        organization = "lab-01"
+        workspaces {
+        name = "demo"
+        }
+    }
+    
     required_providers {
         vsphere = {
         source = "hashicorp/vsphere"
@@ -6,22 +13,22 @@ terraform {
         }
     }
 
-    backend "s3" {
-        bucket = "terraform-stats01"
-        key = "dev/vcenter-inti-server-k8s/terraform.tfstate"
-        access_key = "input"
-        secret_key = "input"
-        region = "ap-southeast-1"
+    # backend "s3" {
+    #     bucket = "terraform-stats01"
+    #     key = "dev/vcenter-inti-server-k8s/terraform.tfstate"
+    #     access_key = var.access_key_s3
+    #     secret_key = var.secret_s3
+    #     region = var.region_s3
 
-        # Enable during State Locking
-        dynamodb_table = "dev-day8-init-server-k8s"
-    }
+    #     # Enable during State Locking
+    #     dynamodb_table = "dev-day8-init-server-k8s"
+    # }
 }
 
 provider "aws" {
-  region = "ap-southeast-1"
-  access_key = "input"
-  secret_key = "input"
+    access_key = var.access_key_s3
+    secret_key = var.secret_s3
+    region = var.region_s3
 }
 
 provider "vsphere" {

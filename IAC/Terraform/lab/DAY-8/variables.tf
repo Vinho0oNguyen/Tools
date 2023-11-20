@@ -6,6 +6,13 @@ locals {
 }
 
 ###################### 
+# VARIABLES S3 #######
+######################
+variable "access_key_s3" {}
+variable "secret_s3" {}
+variable "region_s3" {}
+
+###################### 
 # VARIABLES VCENTER ##
 ######################
 variable "vsphere_user" {
