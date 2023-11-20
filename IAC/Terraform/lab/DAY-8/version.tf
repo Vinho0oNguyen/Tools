@@ -9,8 +9,8 @@ terraform {
     backend "s3" {
         bucket = "terraform-stats01"
         key = "dev/vcenter-inti-server-k8s/terraform.tfstate"
-        access_key = "AKIA2FK22L3P3EHLOZHK"
-        secret_key = "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"
+        access_key = "input"
+        secret_key = "input"
         region = "ap-southeast-1"
 
         # Enable during State Locking
@@ -20,8 +20,8 @@ terraform {
 
 provider "aws" {
   region = "ap-southeast-1"
-  access_key = "AKIA2FK22L3P3EHLOZHK"
-  secret_key = "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"
+  access_key = "input"
+  secret_key = "input"
 }
 
 provider "vsphere" {
