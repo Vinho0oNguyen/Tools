@@ -1,5 +1,5 @@
-aws_access_key = "AKIA2FK22L3P3EHLOZHK"
-aws_secret_key = "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"
+aws_access_key = "input"
+aws_secret_key = "inout"
 key_name = "lab"
 private_key_path = "./private-key.pem"
 region = "ap-southeast-1"
