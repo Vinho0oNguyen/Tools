@@ -1,0 +1,8 @@
+aws_access_key = "AKIA2FK22L3P3EHLOZHK"
+aws_secret_key = "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"
+key_name = "lab"
+private_key_path = "./private-key.pem"
+region = "ap-southeast-1"
+billing_code_tag = "0939473498"
+enviroment_tag = "dev"
+bucket_name_prefix = "day03-s3"
